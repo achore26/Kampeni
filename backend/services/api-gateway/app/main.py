@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, candidates, sentiment, opponent, briefing, health
+from .routers import auth, candidates, sentiment, opponent, briefing, health, intake
 
 app = FastAPI(
     title="Kampeni API Gateway",
@@ -24,3 +24,4 @@ app.include_router(candidates.router, prefix="/api/v1/candidates", tags=["candid
 app.include_router(sentiment.router, prefix="/api/v1/sentiment", tags=["sentiment"])
 app.include_router(opponent.router, prefix="/api/v1/opponents", tags=["opponents"])
 app.include_router(briefing.router, prefix="/api/v1/briefings", tags=["briefings"])
+app.include_router(intake.router, prefix="/api/v1/intake", tags=["intake"])

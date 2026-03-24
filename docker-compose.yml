@@ -68,6 +68,7 @@ services:
       - SENTIMENT_SERVICE_URL=http://sentiment:8001
       - OPPONENT_SERVICE_URL=http://opponent:8002
       - BRIEFING_SERVICE_URL=http://briefing:8003
+      - INGESTION_SERVICE_URL=http://ingestion:8004
 
   ingestion:
     build:
