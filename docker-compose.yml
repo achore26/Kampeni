@@ -62,6 +62,9 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
       - SENTIMENT_SERVICE_URL=http://sentiment:8001
       - OPPONENT_SERVICE_URL=http://opponent:8002
       - BRIEFING_SERVICE_URL=http://briefing:8003
@@ -76,6 +79,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
 
   sentiment:
     build:
@@ -91,6 +97,10 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_started
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
 
   opponent:
     build:
@@ -104,6 +114,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
 
   briefing:
     build:
@@ -117,6 +130,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
 
   # ─── Frontend ─────────────────────────────────────────────────────────────
   frontend:
