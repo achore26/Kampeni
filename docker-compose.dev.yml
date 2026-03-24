@@ -37,6 +37,12 @@ services:
       - ./backend/shared:/app/shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
 
+  opponent-worker:
+    volumes:
+      - ./backend/services/opponent/app:/app/app
+      - ./backend/shared:/app/shared
+    command: celery -A app.worker worker --beat --loglevel=info
+
   briefing:
     volumes:
       - ./backend/services/briefing/app:/app/app
