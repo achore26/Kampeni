@@ -1,33 +1,45 @@
 version: "3.9"
 
-# Development overrides — hot reload, volume mounts, debug ports
+# Development overrides — hot reload, volume mounts
 services:
   api-gateway:
     volumes:
-      - ./backend/services/api-gateway:/app
+      - ./backend/services/api-gateway/app:/app/app
       - ./backend/shared:/app/shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   ingestion:
     volumes:
-      - ./backend/services/ingestion:/app
+      - ./backend/services/ingestion/app:/app/app
       - ./backend/shared:/app/shared
+
+  ingestion-worker:
+    volumes:
+      - ./backend/services/ingestion/app:/app/app
+      - ./backend/shared:/app/shared
+    command: celery -A app.worker worker --beat --loglevel=info
 
   sentiment:
     volumes:
-      - ./backend/services/sentiment:/app
+      - ./backend/services/sentiment/app:/app/app
       - ./backend/shared:/app/shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
+  sentiment-worker:
+    volumes:
+      - ./backend/services/sentiment/app:/app/app
+      - ./backend/shared:/app/shared
+    command: celery -A app.worker worker --beat --loglevel=info
+
   opponent:
     volumes:
-      - ./backend/services/opponent:/app
+      - ./backend/services/opponent/app:/app/app
       - ./backend/shared:/app/shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
 
   briefing:
     volumes:
-      - ./backend/services/briefing:/app
+      - ./backend/services/briefing/app:/app/app
       - ./backend/shared:/app/shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload
 

@@ -1,13 +1,19 @@
-"""Field agent report intake.
+"""Field agent report processing tasks."""
+import logging
 
-This is push-based (agents submit TO us), not pull-based.
-MVP: simple HTTP intake API + structured WhatsApp form.
-Phase 2: full offline-capable mobile app.
-"""
 from ..worker import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task
-def process_field_report(report_data: dict) -> None:
-    # TODO: classify report, extract sentiment signal, route to sentiment service
-    pass
+def process_pending_field_reports() -> dict:
+    """Process queued field agent reports — wired up in Month 3."""
+    # TODO: pop from Redis field_reports:pending, classify, store
+    return {"processed": 0}
+
+
+@celery_app.task
+def ingest_field_report(report_data: dict) -> None:
+    """Process a single report submitted via intake API."""
+    logger.info("Field report received from ward: %s", report_data.get("ward", "unknown"))
