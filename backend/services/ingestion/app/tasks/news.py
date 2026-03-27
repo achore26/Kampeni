@@ -13,7 +13,7 @@ from shared.config import get_settings
 from shared.database import Base, SyncSessionLocal, sync_engine
 from shared.models import Article
 from shared.models import SentimentRecord  # noqa: F401 — registers mapper
-from shared.scrapers import CitizenScraper, NationScraper, StandardScraper
+from shared.scrapers import , NationScraper, StandardScraper
 
 from ..worker import celery_app
 

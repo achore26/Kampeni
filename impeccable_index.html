@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kampeni — Kenya's First AI Political Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #2e6417;
+      --green-light: #f0f7eb;
+      --green-mid: #ddeece;
+      --red: #ff0000;
+      --black: #0a0a0a;
+      --gray: #6b7280;
+      --gray-light: #f4f4f4;
+      --border: #e5e7eb;
+      --white: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--white);
+      color: var(--black);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 64px;
+    }
+    nav img { height: 48px; width: auto; }
+    nav .nav-links { display: flex; gap: 2rem; list-style: none; }
+    nav .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    nav .nav-links a:hover { color: var(--black); }
+    nav .cta {
+      background: var(--green);
+      color: var(--white);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    nav .cta:hover { background: #255213; }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+    .text-container { max-width: 65ch; }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 5rem 2rem 0;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: end;
+      padding-bottom: 3rem;
+    }
+    h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      color: var(--black);
+    }
+    .hero-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--green);
+      color: var(--white);
+      font-size: 1.25rem;
+      line-height: 1;
+      margin-right: 0.75rem;
+      vertical-align: middle;
+    }
+    .highlight {
+      background: var(--red);
+      color: var(--white);
+      padding: 0 0.25em 0.05em;
+      display: inline;
+    }
+    .hero-desc { color: var(--gray); line-height: 1.7; margin-bottom: 1.5rem; max-width: 32ch; }
+    .email-form { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; max-width: 360px; }
+    .email-form input {
+      flex: 1;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .email-form input:focus { border-color: var(--green); }
+    .btn {
+      background: var(--green);
+      color: var(--white);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.625rem 1rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #255213; }
+    .btn-outline {
+      background: transparent;
+      color: #d1d5db;
+      border: 1px solid #374151;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.75rem 1.75rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-outline:hover { border-color: #6b7280; color: var(--white); }
+    .hint { font-size: 0.75rem; color: #9ca3af; }
+    .arrow-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--black);
+      text-decoration: none;
+      border-bottom: 1px solid var(--black);
+      padding-bottom: 2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .arrow-link:hover { color: var(--green); border-color: var(--green); }
+    .hero-image {
+      width: 100%;
+      height: 520px;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+    }
+
+    /* ── Section labels ── */
+    .label {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+
+    /* ── Mission ── */
+    #mission {
+      padding: 6rem 2rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 4fr;
+      gap: 3rem;
+      align-items: start;
+    }
+    .display {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      color: var(--black);
+    }
+    #mission p.body { color: var(--gray); margin-top: 1.5rem; max-width: 60ch; }
+
+    /* ── Stats ── */
+    #stats {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stats-grid {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .stat {
+      padding: 3rem 1.5rem;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-value {
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 900;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label { font-size: 0.875rem; color: var(--gray); }
+
+    /* ── Problem ── */
+    #problem {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    #problem h2 { font-size: clamp(1.75rem, 3.5vw, 2.75rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.015em; margin-top: 1rem; margin-bottom: 1.5rem; }
+    #problem p { color: var(--gray); margin-bottom: 1rem; }
+    .problem-list { list-style: none; padding-top: 3.5rem; }
+    .problem-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: #4b5563;
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    .problem-x {
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 50%;
+      background: #fef2f2;
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 1px solid #fecaca;
+    }
+
+    /* ── Features ── */
+    #features {
+      border-top: 1px solid var(--border);
+      padding: 6rem 2rem;
+    }
+    #features .inner { max-width: 1280px; margin: 0 auto; }
+    .features-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 4rem;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3.5rem 3rem;
+    }
+    .feature-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--green);
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .feature h3 { font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
+    .feature p { font-size: 0.875rem; color: var(--gray); line-height: 1.7; }
+
+    /* ── About ── */
+    #about { background: var(--gray-light); padding: 6rem 2rem; }
+    #about .inner { max-width: 1280px; margin: 0 auto; }
+    #about .hero-text { max-width: 56ch; margin: 0 auto 5rem; text-align: center; }
+    #about h1.page { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; letter-spacing: -0.02em; margin: 1rem 0; }
+    #about .body { color: var(--gray); font-size: 1.0625rem; }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-bottom: 5rem; }
+    .about-grid h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; }
+    .about-grid p { font-size: 0.9rem; color: var(--gray); margin-bottom: 1rem; line-height: 1.75; }
+    .principle { margin-bottom: 1.25rem; }
+    .principle strong { font-size: 0.9rem; font-weight: 700; display: block; margin-bottom: 0.25rem; }
+    .principle span { font-size: 0.875rem; color: var(--gray); }
+
+    /* ── Team ── */
+    .team-grid { display: flex; gap: 2.5rem; flex-wrap: wrap; margin-bottom: 5rem; }
+    .team-card { display: flex; gap: 1.25rem; max-width: 28rem; align-items: flex-start; }
+    .avatar {
+      width: 3.5rem; height: 3.5rem;
+      border-radius: 12px;
+      background: var(--green-mid);
+      color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; font-weight: 800; flex-shrink: 0;
+    }
+    .avatar-empty {
+      border: 2px dashed var(--border);
+      color: #d1d5db;
+      background: transparent;
+    }
+    .team-name { font-weight: 700; font-size: 0.9375rem; }
+    .team-role { font-size: 0.75rem; color: var(--green); margin: 0.125rem 0 0.5rem; }
+    .team-bio { font-size: 0.875rem; color: var(--gray); line-height: 1.6; }
+
+    /* ── Roadmap ── */
+    .roadmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .roadmap-card {
+      padding: 1.5rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .roadmap-card.done { border-color: var(--green-mid); }
+    .month-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 99px;
+      background: #f3f4f6;
+      color: #6b7280;
+      margin-bottom: 0.75rem;
+    }
+    .month-badge.done { background: var(--green-mid); color: var(--green); }
+    .roadmap-label { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .roadmap-items { list-style: none; }
+    .roadmap-items li {
+      font-size: 0.75rem;
+      color: var(--gray);
+      padding: 0.25rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .roadmap-items li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #d1d5db;
+      flex-shrink: 0;
+    }
+    .roadmap-items.done li::before { background: var(--green); }
+
+    /* ── Modules ── */
+    #modules { padding: 6rem 2rem; }
+    #modules .inner { max-width: 1280px; margin: 0 auto; }
+    #modules .page-header { max-width: 56ch; text-align: center; margin: 0 auto 4rem; }
+    #modules h1.page { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; letter-spacing: -0.02em; margin: 0.75rem 0; }
+    .modules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    .module-card {
+      padding: 1.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--white);
+    }
+    .module-card.coming { background: var(--gray-light); }
+    .module-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
+    .module-icon-wrap {
+      width: 2.5rem; height: 2.5rem;
+      border-radius: 8px;
+      background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .module-icon-wrap.coming { background: #f3f4f6; }
+    .module-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 99px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .module-tag.coming { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }
+    .module-card h3 { font-size: 0.9375rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .module-card p { font-size: 0.875rem; color: var(--gray); line-height: 1.7; margin-bottom: 1.25rem; }
+    .bullets { display: grid; grid-template-columns: 1fr 1fr; gap: 0.375rem; list-style: none; }
+    .bullets li { font-size: 0.75rem; color: #9ca3af; display: flex; align-items: center; gap: 0.375rem; }
+    .bullets li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
+    .bullets li.live::before { background: var(--green); }
+
+    /* ── Contact ── */
+    #contact { padding: 6rem 2rem; background: var(--gray-light); }
+    #contact .inner { max-width: 1280px; margin: 0 auto; }
+    #contact .page-header { max-width: 50ch; text-align: center; margin: 0 auto 4rem; }
+    #contact h1.page { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; letter-spacing: -0.02em; margin: 0.75rem 0; }
+    .contact-grid { display: grid; grid-template-columns: 2fr 3fr; gap: 3.5rem; }
+    .contact-info { display: flex; flex-direction: column; gap: 1.5rem; }
+    .contact-item { display: flex; gap: 1rem; }
+    .contact-icon {
+      width: 2.25rem; height: 2.25rem;
+      border-radius: 6px;
+      background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .contact-item strong { font-size: 0.875rem; font-weight: 600; display: block; }
+    .contact-item span { font-size: 0.8125rem; color: var(--gray); }
+    .response-box {
+      padding: 1.25rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .response-box .label { display: block; margin-bottom: 0.25rem; }
+    .response-box strong { font-size: 1.125rem; font-weight: 800; display: block; }
+    .response-box small { font-size: 0.75rem; color: #9ca3af; }
+    form.contact-form { display: flex; flex-direction: column; gap: 1.25rem; }
+    form.contact-form label { font-size: 0.75rem; font-weight: 500; color: #4b5563; display: block; margin-bottom: 0.375rem; }
+    form.contact-form input,
+    form.contact-form select,
+    form.contact-form textarea {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      outline: none;
+      background: var(--white);
+      transition: border-color 0.15s;
+    }
+    form.contact-form input:focus,
+    form.contact-form select:focus,
+    form.contact-form textarea:focus { border-color: var(--green); }
+    form.contact-form textarea { resize: none; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    form .btn { width: 100%; padding: 0.875rem; font-size: 0.9375rem; border-radius: 4px; }
+
+    /* ── Dark CTA ── */
+    #cta { background: #030712; padding: 7rem 2rem; }
+    #cta .inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+    #cta h2 { font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; color: var(--white); }
+    #cta p { color: #9ca3af; line-height: 1.75; margin-bottom: 2rem; }
+    .cta-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    /* ── Footer ── */
+    footer { background: #030712; border-top: 1px solid #111827; padding: 4rem 2rem 2rem; }
+    footer .inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2.5rem; padding-bottom: 3rem; }
+    footer img { height: 40px; width: auto; filter: brightness(0) invert(1); margin-bottom: 1rem; }
+    footer .tagline { font-size: 0.875rem; color: #6b7280; line-height: 1.65; }
+    footer h4 { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; color: #6b7280; margin-bottom: 1rem; }
+    footer ul { list-style: none; display: flex; flex-direction: column; gap: 0.625rem; }
+    footer a { font-size: 0.875rem; color: #6b7280; text-decoration: none; transition: color 0.15s; }
+    footer a:hover { color: var(--white); }
+    .footer-bottom {
+      max-width: 1280px; margin: 0 auto;
+      border-top: 1px solid #1f2937;
+      padding-top: 1.5rem;
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; color: #4b5563;
+    }
+
+    /* ── SVG icons (inline) ── */
+    svg { display: inline-block; }
+
+    @media (max-width: 768px) {
+      .hero-grid, #mission, #problem, .about-grid, .contact-grid, #cta .inner, footer .inner { grid-template-columns: 1fr; }
+      .stats-grid, .features-grid, .roadmap-grid, .modules-grid { grid-template-columns: 1fr 1fr; }
+      nav .nav-links { display: none; }
+      h1 { font-size: 2.5rem; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid, .features-grid, .roadmap-grid, .modules-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <img src="frontend/public/Kampeni_Logo_transparent.png" alt="Kampeni" />
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#modules">Features</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="cta">Launch Platform →</a>
+</nav>
+
+<!-- ── Hero ── -->
+<section id="hero">
+  <div class="hero-grid">
+    <div>
+      <h1>
+        Kenya's First<br>
+        <span class="hero-icon">+</span>AI-Powered<br>
+        <span class="highlight">Intelligence</span><br>
+        Platform
+      </h1>
+    </div>
+    <div>
+      <p class="hero-desc">
+        At Kampeni, we arm political campaigns with real-time intelligence — sentiment analysis,
+        opponent tracking, and field data — so you always know what's happening before your opponents do.
+      </p>
+      <div class="email-form">
+        <input type="email" placeholder="your@campaign.co.ke" />
+        <button class="btn">Get Early Access</button>
+      </div>
+      <p class="hint">No spam · Unsubscribe anytime</p>
+      <a href="#modules" class="arrow-link">Browse our capabilities ↗</a>
+    </div>
+  </div>
+  <img src="frontend/public/Home Hero.png" alt="Kenyan political rally — leader addressing a crowd" class="hero-image" />
+</section>
+
+<!-- ── Mission ── -->
+<section id="mission">
+  <div>
+    <span class="label">/our mission/</span>
+  </div>
+  <div>
+    <p class="display">Whether it's a ward, a constituency, or a county — we deliver intelligence that wins elections.</p>
+    <p class="body">Kenya's 2022 election saw 14,000+ candidates competing across 47 counties. The sophisticated ones had Nairobi consultants monitoring media manually. Kampeni gives every candidate — from first-time MCA to gubernatorial race — the same data advantage.</p>
+  </div>
+</section>
+
+<!-- ── Dashboard illustration ── -->
+<div style="max-width:1280px;margin:0 auto 6rem;padding:0 2rem;display:flex;justify-content:center;">
+  <div style="width:100%;max-width:720px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 2px 16px rgba(0,0,0,0.07);">
+    <img src="frontend/public/dashboard.png" alt="Kampeni dashboard" style="width:100%;display:block;object-fit:cover;object-position:top;" />
+  </div>
+</div>
+
+<!-- ── Stats ── -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat">
+      <p class="stat-value">47+</p>
+      <p class="stat-label">Counties covered</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">3</p>
+      <p class="stat-label">News sources scraped</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">30min</p>
+      <p class="stat-label">Ingestion cadence</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">6 AM</p>
+      <p class="stat-label">Daily briefing delivery</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problem ── -->
+<section id="problem">
+  <div>
+    <span class="label">/the problem/</span>
+    <h2>Kenyan campaigns run on gut feeling and WhatsApp groups</h2>
+    <p>Your opponents have Nairobi consultants monitoring media manually. You're reading about yesterday's news today. Field agent reports sit in someone's notebook.</p>
+    <p>By the time you know the mood in Kisumu is shifting, your opponent has already responded.</p>
+  </div>
+  <div>
+    <ul class="problem-list">
+      <li class="problem-item"><span class="problem-x">✕</span> No real-time media monitoring</li>
+      <li class="problem-item"><span class="problem-x">✕</span> Opponent coverage found manually</li>
+      <li class="problem-item"><span class="problem-x">✕</span> Field data collected on paper</li>
+      <li class="problem-item"><span class="problem-x">✕</span> Intelligence shared via WhatsApp</li>
+      <li class="problem-item"><span class="problem-x">✕</span> No Swahili / Sheng NLP support</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="inner">
+    <div class="features-header">
+      <div>
+        <span class="label">/platform capabilities/</span>
+        <h2 class="display" style="margin-top:0.75rem">Everything your<br>campaign needs</h2>
+      </div>
+      <a href="#modules" class="arrow-link" style="margin-top:0">All features ↗</a>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
+        <h3>Real-Time Sentiment</h3>
+        <p>Track public mood across Nation, Standard, and Citizen Digital — in English and Swahili — every 30 minutes.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h3>Opponent Intelligence</h3>
+        <p>Every news mention of your opponents is captured, contextualised, and ranked by frequency and sentiment automatically.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2z"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M4 10h16"/></svg>
+        <h3>AI Daily Briefing</h3>
+        <p>A GPT-4o-generated morning brief lands on your phone at 6 AM: overnight news, opponent moves, field sentiment.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <h3>Field Agent Network</h3>
+        <p>Your ground team submits structured ward-level reports — support level, top issue, GPS — from any phone.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h3>Role-Based Access</h3>
+        <p>Candidate, campaign manager, analyst, field agent — each sees exactly what they need and nothing more.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <h3>Swahili-Native NLP</h3>
+        <p>Sentiment analysis built for Swahili and Sheng from day one. Not English models with translation bolted on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── About ── -->
+<section id="about">
+  <div class="inner">
+    <div class="hero-text">
+      <span class="label">our mission</span>
+      <h1 class="page">Data-driven democracy starts in Kenya</h1>
+      <p class="body">We believe every candidate deserves access to real intelligence — not just well-funded incumbents. Kampeni levels the field with AI-powered analytics that are Swahili-native and built for Kenyan political reality.</p>
+    </div>
+
+    <div class="about-grid">
+      <div>
+        <h2>Why we're building this</h2>
+        <p>Kenya's 2022 election saw 14,000+ candidates competing for seats across 47 counties. The sophisticated ones had Nairobi consultants monitoring WhatsApp groups and compiling spreadsheets manually.</p>
+        <p>The rest — the local MP challenger, the first-time MCA candidate, the woman running for governor in a rural county — had nothing. No data. No intelligence. Just instinct.</p>
+        <p>Kampeni ingests every major Kenyan news source in real time, classifies sentiment in English and Swahili, tracks opponent mentions, and synthesizes it into a morning briefing any candidate can act on.</p>
+      </div>
+      <div>
+        <h2>Our principles</h2>
+        <div class="principle"><strong>Kenya-first</strong><span>Built for Swahili and Sheng from day one. Not English models retrofitted for East Africa.</span></div>
+        <div class="principle"><strong>Privacy by default</strong><span>Candidate data is never shared. Each campaign sees only their own intelligence.</span></div>
+        <div class="principle"><strong>Fair access</strong><span>Pricing designed so a first-time MCA candidate can afford the same tools as a gubernatorial campaign.</span></div>
+        <div class="principle"><strong>Accuracy over speed</strong><span>We'd rather deliver one verified insight than ten noisy ones.</span></div>
+      </div>
+    </div>
+
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:2rem">The Team</h2>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="avatar">M</div>
+        <div>
+          <p class="team-name">Morris</p>
+          <p class="team-role">CEO &amp; Founder</p>
+          <p class="team-bio">Driving the vision and growth of Kampeni. Building Kenya's first AI political intelligence platform ahead of the 2027 general election.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="avatar">B</div>
+        <div>
+          <p class="team-name">Barak</p>
+          <p class="team-role">CTO &amp; Co-Founder</p>
+          <p class="team-bio">Building the infrastructure that turns raw Kenyan media into campaign intelligence. Previously built data systems for East African fintechs.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="avatar">A</div>
+        <div>
+          <p class="team-name">Alby</p>
+          <p class="team-role">Software Engineer</p>
+          <p class="team-bio">Engineering the core platform — from data pipelines and NLP models to the dashboard that campaigns rely on every morning.</p>
+        </div>
+      </div>
+      <div class="team-card" style="opacity:0.55">
+        <div class="avatar avatar-empty">+</div>
+        <div>
+          <p class="team-name">You?</p>
+          <p class="team-role" style="color:#9ca3af">Head of Product · Head of Sales · ML Engineer</p>
+          <p class="team-bio">We're building the founding team. If you're obsessed with Kenyan politics and love data, reach out.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:2rem">6-Month Roadmap to Launch</h2>
+    <div class="roadmap-grid">
+      <div class="roadmap-card done">
+        <span class="month-badge done">Month 1</span>
+        <p class="roadmap-label">MVP ✓ Live</p>
+        <ul class="roadmap-items done"><li>News ingestion + sentiment</li><li>Opponent tracking</li><li>Field agent intake</li></ul>
+      </div>
+      <div class="roadmap-card">
+        <span class="month-badge">Month 2</span>
+        <p class="roadmap-label">Social &amp; NLP</p>
+        <ul class="roadmap-items"><li>Facebook + Twitter ingestion</li><li>Swahili NLP model upgrade</li><li>Auth0 role-based access</li></ul>
+      </div>
+      <div class="roadmap-card">
+        <span class="month-badge">Month 3</span>
+        <p class="roadmap-label">Intelligence</p>
+        <ul class="roadmap-items"><li>Hansard voting records</li><li>spaCy NER for entities</li><li>Ward-level heat maps</li></ul>
+      </div>
+      <div class="roadmap-card">
+        <span class="month-badge">Month 4</span>
+        <p class="roadmap-label">Briefings</p>
+        <ul class="roadmap-items"><li>GPT-4o daily briefs</li><li>SMS delivery via AT</li><li>Campaign dashboard v2</li></ul>
+      </div>
+      <div class="roadmap-card">
+        <span class="month-badge">Month 5</span>
+        <p class="roadmap-label">Scale</p>
+        <ul class="roadmap-items"><li>Polling integration</li><li>Multi-candidate support</li><li>Voter sentiment mapping</li></ul>
+      </div>
+      <div class="roadmap-card">
+        <span class="month-badge">Month 6</span>
+        <p class="roadmap-label">2027 Ready</p>
+        <ul class="roadmap-items"><li>Full governance module</li><li>County-level analytics</li><li>Partner API</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Modules ── -->
+<section id="modules">
+  <div class="inner">
+    <div class="page-header">
+      <span class="label">platform features</span>
+      <h1 class="page">Everything your campaign needs</h1>
+      <p style="color:var(--gray);font-size:1.0625rem">Built module by module, shipped live. No bloated software — every feature earns its place.</p>
+    </div>
+    <div class="modules-grid">
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2z"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M4 10h16"/></svg>
+          </div>
+          <span class="module-tag">✓ Live Now</span>
+        </div>
+        <h3>News Intelligence</h3>
+        <p>Every 30 minutes, Kampeni scrapes Nation Africa, Standard Media, and Citizen Digital. New articles are deduplicated, stored, and queued for analysis automatically.</p>
+        <ul class="bullets"><li class="live">3 major Kenyan outlets</li><li class="live">RSS + HTML scraping</li><li class="live">30-minute cadence</li><li class="live">Duplicate detection</li></ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
+          </div>
+          <span class="module-tag">✓ Live Now</span>
+        </div>
+        <h3>Sentiment Analysis</h3>
+        <p>Every article is classified positive, negative, or neutral using VADER for English and a Swahili keyword model. Month 2 upgrades to a fine-tuned Llama 3.1 8B.</p>
+        <ul class="bullets"><li class="live">English + Swahili support</li><li class="live">Score: −1.0 to +1.0</li><li class="live">Language auto-detection</li><li class="live">Sheng upgrade Month 2</li></ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="module-tag">✓ Live Now</span>
+        </div>
+        <h3>Opponent Tracker</h3>
+        <p>Register any opponent with name, aliases, and constituency. Every 5 minutes the system scans articles for mentions and extracts the exact sentence as context.</p>
+        <ul class="bullets"><li class="live">Name + alias matching</li><li class="live">Context extraction</li><li class="live">Title vs body detection</li><li class="live">Mention timeline</li></ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span class="module-tag">✓ Live Now</span>
+        </div>
+        <h3>Field Agent Network</h3>
+        <p>Field agents submit structured reports from any ward — support level, top issue, GPS. Reports persist to the database within 5 minutes via Celery.</p>
+        <ul class="bullets"><li class="live">7 issue categories</li><li class="live">5 support levels</li><li class="live">GPS coordinates</li><li class="live">Ward aggregation</li></ul>
+      </div>
+
+      <div class="module-card coming">
+        <div class="module-header">
+          <div class="module-icon-wrap coming">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <span class="module-tag coming">Month 2</span>
+        </div>
+        <h3>Social Media</h3>
+        <p>Facebook page monitoring via Meta Graph API and X/Twitter ingestion. Public posts, comments, and engagement from your constituency.</p>
+        <ul class="bullets"><li>Meta Graph API</li><li>X/Twitter Basic</li><li>Comment sentiment</li><li>Engagement tracking</li></ul>
+      </div>
+
+      <div class="module-card coming">
+        <div class="module-header">
+          <div class="module-icon-wrap coming">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <span class="module-tag coming">Month 4</span>
+        </div>
+        <h3>AI Daily Briefing</h3>
+        <p>At 11 PM, GPT-4o synthesises the day's news, opponent activity, and field reports into a brief. Delivered to your phone via SMS at 6 AM.</p>
+        <ul class="bullets"><li>GPT-4o generation</li><li>SMS via Africa's Talking</li><li>6 AM daily delivery</li><li>Editable before send</li></ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Contact ── -->
+<section id="contact">
+  <div class="inner">
+    <div class="page-header">
+      <span class="label">get in touch</span>
+      <h1 class="page">Let's talk about your campaign</h1>
+      <p style="color:var(--gray);font-size:1.0625rem">Whether you're a first-time MCA candidate or running for Governor, we want to hear from you.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <strong>Early Access</strong>
+            <span>Get platform access before public launch. Founding campaigns get lifetime discounts.</span>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div>
+            <strong>Partnership</strong>
+            <span>NGOs, polling firms, media houses — let's explore what we can build together.</span>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e6417" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <strong>Investor Inquiry</strong>
+            <span>We're raising our seed round. Deck available on request.</span>
+          </div>
+        </div>
+        <div class="response-box">
+          <span class="label">Response time</span>
+          <strong>Within 24 hours</strong>
+          <small>Mon–Fri, Nairobi time</small>
+        </div>
+      </div>
+
+      <form class="contact-form" onsubmit="return false">
+        <div class="form-row">
+          <div><label>Full Name</label><input type="text" placeholder="Your name" /></div>
+          <div><label>Email</label><input type="email" placeholder="your@email.com" /></div>
+        </div>
+        <div>
+          <label>Inquiry Type</label>
+          <select>
+            <option>Early Access — I'm a candidate / campaign manager</option>
+            <option>Investor Inquiry</option>
+            <option>Partnership / Integration</option>
+            <option>Press / Media</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <div><label>Constituency / County</label><input type="text" placeholder="e.g. Westlands, Nairobi County" /></div>
+        <div><label>Message</label><textarea rows="4" placeholder="Tell us about your campaign or inquiry..."></textarea></div>
+        <button type="submit" class="btn">Send Message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <div class="inner">
+    <h2>Win with data,<br>not guesswork.</h2>
+    <div>
+      <p>Join the campaigns already signing up for early access to Kenya's most advanced political intelligence platform.</p>
+      <div class="cta-buttons">
+        <a href="#contact" class="btn">Request Early Access</a>
+        <a href="#modules" class="btn-outline">Explore Features →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="inner">
+    <div>
+      <img src="frontend/public/Kampeni_Logo_transparent.png" alt="Kampeni" />
+      <p class="tagline">Kenya's first AI-powered political intelligence platform. Built for the 2027 election.</p>
+    </div>
+    <div>
+      <h4>Platform</h4>
+      <ul><li><a href="#modules">Features</a></li><li><a href="#contact">Pricing</a></li><li><a href="#contact">Dashboard</a></li></ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li><li><a href="#">Blog</a></li></ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Security</a></li></ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Kampeni. All rights reserved.</span>
+    <span>Built in Kenya 🇰🇪</span>
+  </div>
+</footer>
+
+</body>
+</html>

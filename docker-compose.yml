@@ -190,6 +190,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - API_GATEWAY_URL=http://api-gateway:8000
     depends_on:
       - api-gateway
 

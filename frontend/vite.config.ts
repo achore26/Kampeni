@@ -1,13 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
     port: 3000,
+    host: true,
     proxy: {
-      '/api': 'http://localhost:8000',
-      '/auth': 'http://localhost:8000',
+      '/api': process.env.API_GATEWAY_URL || 'http://localhost:8000',
+      '/auth': process.env.API_GATEWAY_URL || 'http://localhost:8000',
     },
   },
 })

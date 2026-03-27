@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+}
+
+@layer utilities {
+  .highlight {
+    background: #ff0000;
+    color: white;
+    padding: 0 0.35em 0.05em;
+    display: inline;
+  }
+
+  .btn-primary {
+    background: #2e6417;
+    color: white;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover {
+    background: #255213;
+  }
+
+  .section-label {
+    @apply text-xs tracking-[0.25em] text-gray-400 uppercase font-medium;
+  }
+
+  /* Subtle dot-grid texture for main content areas */
+  .bg-dot-grid {
+    background-color: #f5f6f8;
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.055) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
+
+/* ── Splash screen keyframes ───────────────────────────────────── */
+@keyframes splashLogo {
+  0%   { opacity: 0; transform: scale(0.78); }
+  100% { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes splashScan {
+  0%   { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes splashTagline {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes splashExit {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
