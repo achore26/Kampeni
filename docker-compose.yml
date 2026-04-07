@@ -39,7 +39,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     ports:
-      - "9000:9000"
+      - "9001:9000"
       - "8123:8123"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
@@ -47,6 +47,23 @@ services:
       nofile:
         soft: 262144
         hard: 262144
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9090"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9090:9090"   # MinIO console UI
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kampeni}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ─── Backend Services ─────────────────────────────────────────────────────
   api-gateway:
@@ -69,6 +86,8 @@ services:
       - OPPONENT_SERVICE_URL=http://opponent:8002
       - BRIEFING_SERVICE_URL=http://briefing:8003
       - INGESTION_SERVICE_URL=http://ingestion:8004
+      - TRANSLATION_SERVICE_URL=http://translation:8005
+      - PAINPOINT_SERVICE_URL=http://painpoint:8006
 
   ingestion:
     build:
@@ -82,9 +101,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
 
   ingestion-worker:
     build:
@@ -96,10 +121,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://redis:6379/0
-    command: celery -A app.worker worker --beat --loglevel=info
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
+    command: celery -A app.worker worker --loglevel=info
 
   sentiment:
     build:
@@ -134,7 +165,7 @@ services:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_HOST=qdrant
-    command: celery -A app.worker worker --beat --loglevel=info
+    command: celery -A app.worker worker --loglevel=info
 
   opponent:
     build:
@@ -165,7 +196,7 @@ services:
     environment:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://redis:6379/0
-    command: celery -A app.worker worker --beat --loglevel=info
+    command: celery -A app.worker worker --loglevel=info
 
   briefing:
     build:
@@ -183,6 +214,121 @@ services:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://redis:6379/0
 
+  translation:
+    build:
+      context: ./backend
+      dockerfile: services/translation/Dockerfile
+    env_file: .env
+    ports:
+      - "8005:8005"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
+
+  translation-worker:
+    build:
+      context: ./backend
+      dockerfile: services/translation/Dockerfile
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
+    command: celery -A app.worker worker --loglevel=info
+
+  painpoint:
+    build:
+      context: ./backend
+      dockerfile: services/painpoint/Dockerfile
+    env_file: .env
+    ports:
+      - "8006:8006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
+
+  painpoint-worker:
+    build:
+      context: ./backend
+      dockerfile: services/painpoint/Dockerfile
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
+      - MINIO_BUCKET=kampeni-raw
+    command: celery -A app.worker worker --loglevel=info
+
+  # ─── Orchestration (Prefect) ──────────────────────────────────────────────
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - "4200:4200"
+    environment:
+      - PREFECT_UI_API_URL=http://localhost:4200/api
+    volumes:
+      - prefect_data:/root/.prefect
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  prefect-worker:
+    build:
+      context: ./flows
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+      - INGESTION_SERVICE_URL=http://ingestion:8004
+      - SENTIMENT_SERVICE_URL=http://sentiment:8001
+      - BRIEFING_SERVICE_URL=http://briefing:8003
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+      ingestion:
+        condition: service_started
+      sentiment:
+        condition: service_started
+      briefing:
+        condition: service_started
+
   # ─── Frontend ─────────────────────────────────────────────────────────────
   frontend:
     build:
@@ -199,3 +345,5 @@ volumes:
   postgres_data:
   qdrant_data:
   clickhouse_data:
+  minio_data:
+  prefect_data:

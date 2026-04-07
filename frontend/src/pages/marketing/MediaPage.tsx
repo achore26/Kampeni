@@ -1,4 +1,4 @@
-import { Download, Image, FileText, Mail, Phone } from 'lucide-react'
+import { Download, Image, FileText, Mail, Phone, User } from 'lucide-react'
 
 const RESOURCES = [
   { icon: Download, title: 'Logo Downloads', desc: 'PNG, SVG, and vector formats in multiple color variants.', action: 'Download logos' },
@@ -45,8 +45,8 @@ export default function MediaPage() {
               "Kenya's political future belongs to leaders who make data-driven decisions, not educated guesses."
             </p>
             <footer className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#ddeece] text-[#2e6417] flex items-center justify-center font-bold shrink-0">
-                M
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                <User className="w-5 h-5 text-gray-400" strokeWidth={1.5} />
               </div>
               <div>
                 <p className="font-semibold text-gray-900 text-sm">Morris Nyange</p>
@@ -62,14 +62,14 @@ export default function MediaPage() {
             <span className="section-label">/media contact/</span>
             <h3 className="font-bold text-gray-900 mt-4 mb-5">Media Contact</h3>
             <div className="space-y-3 text-sm text-gray-500">
-              <p className="font-medium text-gray-900">[PR Contact Name]</p>
+              <p className="font-medium text-gray-900">Kampeni Intelligence Platform</p>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                <span>[Email]</span>
+                <a href="mailto:info@kampeni.net" className="hover:text-gray-900 transition-colors">info@kampeni.net</a>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                <span>[Phone]</span>
+                <a href="tel:+254713657133" className="hover:text-gray-900 transition-colors">+254 713 657133</a>
               </div>
             </div>
           </div>

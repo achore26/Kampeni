@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BarChart2, Users, Newspaper } from 'lucide-react'
+import { BarChart2, Users, Newspaper, ClipboardList } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
@@ -11,6 +11,7 @@ export default function DashboardLayout() {
     { to: '/dashboard', label: t('nav.briefing'), icon: Newspaper, end: true },
     { to: '/dashboard/sentiment', label: t('nav.sentiment'), icon: BarChart2, end: false },
     { to: '/dashboard/opponents', label: t('nav.opponents'), icon: Users, end: false },
+    { to: '/dashboard/field-reports', label: t('nav.fieldReports'), icon: ClipboardList, end: false },
   ]
 
   return (
@@ -40,7 +41,7 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-gray-100 space-y-3">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-[#2e6417] flex items-center justify-center text-white text-xs font-bold">K</div>
             <div>
@@ -48,6 +49,7 @@ export default function DashboardLayout() {
               <p className="text-xs text-gray-400">Month 1 · 2026</p>
             </div>
           </div>
+          <p className="text-xs text-gray-400 px-2">Powered by <span className="font-semibold text-gray-500">CIF AI</span></p>
         </div>
       </aside>
 

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from shared.database import Base, sync_engine
 from shared.models import Article, SentimentRecord  # noqa: F401 — register mappers
 
-from .routers import health, sentiment
+from .routers import health, sentiment, trigger
 
 
 @asynccontextmanager
@@ -24,3 +24,4 @@ app = FastAPI(
 
 app.include_router(health.router, tags=["health"])
 app.include_router(sentiment.router, prefix="/sentiment", tags=["sentiment"])
+app.include_router(trigger.router)

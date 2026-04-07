@@ -6,6 +6,8 @@ class GatewaySettings(BaseSettings):
     opponent_service_url: str = "http://opponent:8002"
     briefing_service_url: str = "http://briefing:8003"
     ingestion_service_url: str = "http://ingestion:8004"
+    translation_service_url: str = "http://translation:8005"
+    painpoint_service_url: str = "http://painpoint:8006"
 
     class Config:
         env_file = ".env"

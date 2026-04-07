@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str = ""
 
+    # Object Storage (MinIO locally, swap to S3 in production)
+    minio_endpoint: str = "http://localhost:9000"
+    minio_access_key: str = "kampeni"
+    minio_secret_key: str = "kampeni_dev_secret"
+    minio_bucket: str = "kampeni-raw"
+
     # Africa's Talking
     at_api_key: str = ""
     at_username: str = ""

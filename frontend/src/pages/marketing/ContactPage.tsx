@@ -22,6 +22,32 @@ export default function ContactPage() {
   const [eaSubmitted, setEaSubmitted] = useState(false)
   const [pSubmitted, setPSubmitted] = useState(false)
 
+  function submitEarlyAccess() {
+    if (!earlyAccess.name || !earlyAccess.email) return
+    const body = [
+      `Name: ${earlyAccess.name}`,
+      `Email: ${earlyAccess.email}`,
+      `Phone: ${earlyAccess.phone || '—'}`,
+      `Political Level: ${earlyAccess.level || '—'}`,
+      `Location: ${earlyAccess.location || '—'}`,
+      `How they heard: ${earlyAccess.howHeard || '—'}`,
+    ].join('\n')
+    window.location.href = `mailto:info@kampeni.net?subject=Early Access Request — ${earlyAccess.name}&body=${encodeURIComponent(body)}`
+    setEaSubmitted(true)
+  }
+
+  function submitPartnership() {
+    if (!partnership.name || !partnership.email) return
+    const body = [
+      `Name: ${partnership.name}`,
+      `Organization: ${partnership.org || '—'}`,
+      `Email: ${partnership.email}`,
+      `Details: ${partnership.details || '—'}`,
+    ].join('\n')
+    window.location.href = `mailto:info@kampeni.net?subject=Partnership Inquiry — ${partnership.org || partnership.name}&body=${encodeURIComponent(body)}`
+    setPSubmitted(true)
+  }
+
   return (
     <>
       {/* ── Header ───────────────────────────────────────────────────── */}
@@ -120,7 +146,7 @@ export default function ContactPage() {
                   </select>
                 </div>
                 <button
-                  onClick={() => earlyAccess.name && earlyAccess.email && setEaSubmitted(true)}
+                  onClick={submitEarlyAccess}
                   className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm"
                 >
                   Request Early Access
@@ -196,7 +222,7 @@ export default function ContactPage() {
                   />
                 </div>
                 <button
-                  onClick={() => partnership.name && partnership.email && setPSubmitted(true)}
+                  onClick={submitPartnership}
                   className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm"
                 >
                   Send Inquiry
@@ -220,15 +246,17 @@ export default function ContactPage() {
               <div className="space-y-3 text-sm text-gray-500">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                  <span>[Physical Address]</span>
+                  <span>CIF AI HQ</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span>[Your Number]</span>
+                  <a href="tel:+254713657133" className="hover:text-gray-900 transition-colors">+254 713 657133</a>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span>[Your Email]</span>
+                  <a href="mailto:info@kampeni.net" className="hover:text-gray-900 transition-colors">
+                    info@kampeni.net
+                  </a>
                 </div>
               </div>
             </div>

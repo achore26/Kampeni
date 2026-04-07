@@ -37,7 +37,7 @@ export default function MarketingLayout() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="hidden md:inline-flex btn-primary px-5 py-2 rounded text-sm">
+            <Link to="/login" className="hidden md:inline-flex btn-primary px-5 py-2 rounded text-sm">
               Launch Platform →
             </Link>
             <button className="md:hidden p-1 text-gray-600" onClick={() => setMobileOpen(v => !v)}>
@@ -52,7 +52,7 @@ export default function MarketingLayout() {
               <NavLink key={to} to={to} onClick={() => setMobileOpen(false)}
                 className="block py-2.5 text-sm font-medium text-gray-700">{label}</NavLink>
             ))}
-            <Link to="/dashboard" onClick={() => setMobileOpen(false)}
+            <Link to="/login" onClick={() => setMobileOpen(false)}
               className="block mt-3 btn-primary px-5 py-2.5 rounded text-sm text-center">
               Launch Platform →
             </Link>
@@ -89,7 +89,7 @@ export default function MarketingLayout() {
         </div>
         <div className="max-w-7xl mx-auto px-6 pb-8 flex items-center justify-between text-xs text-gray-600 border-t border-gray-800 pt-6">
           <span>© 2026 Kampeni. All rights reserved.</span>
-          <span>Built in Kenya 🇰🇪</span>
+          <span>Powered by <span className="text-gray-400 font-semibold">CIF AI</span> · Built in Kenya 🇰🇪</span>
         </div>
       </footer>
     </div>

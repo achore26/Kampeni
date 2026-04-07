@@ -1,21 +1,30 @@
+import { User } from 'lucide-react'
+
 const TEAM = [
   {
     name: 'Morris Nyange',
     role: 'CEO & Co-Founder',
     bio: 'Driving the vision and growth of Kampeni. Building Kenya\'s first political intelligence platform to change how leaders make decisions.',
-    initial: 'M',
   },
   {
-    name: 'Barak',
+    name: 'Barak Asidi',
     role: 'CTO & Co-Founder',
     bio: 'Building the infrastructure that turns raw Kenyan media into campaign intelligence. Previously built data systems for East African fintechs.',
-    initial: 'B',
   },
   {
-    name: 'Alby',
-    role: 'Head of Development & Co-Founder',
+    name: 'Albert Chore',
+    role: 'Software & Cloud Engineer',
     bio: 'Engineering the core platform — from data pipelines and NLP models to the dashboard that campaigns rely on every morning.',
-    initial: 'A',
+  },
+  {
+    name: 'John Chore',
+    role: 'Chief Financial Officer',
+    bio: 'Overseeing Kampeni\'s financial strategy and ensuring the platform scales sustainably across Kenya\'s political landscape.',
+  },
+  {
+    name: 'Anwar Omar',
+    role: 'Political Director',
+    bio: 'Leading political strategy and client relationships across Kenya. Bridging the gap between intelligence data and real campaign decisions.',
   },
 ]
 
@@ -76,10 +85,10 @@ export default function AboutPage() {
         <span className="section-label">/the team/</span>
         <h2 className="text-2xl font-bold text-gray-900 mt-4 mb-12">Meet the Team</h2>
         <div className="flex gap-10 flex-wrap">
-          {TEAM.map(({ name, role, bio, initial }) => (
+          {TEAM.map(({ name, role, bio }) => (
             <div key={name} className="flex items-start gap-5 max-w-sm">
-              <div className="w-14 h-14 rounded-2xl bg-[#ddeece] text-[#2e6417] flex items-center justify-center text-xl font-bold shrink-0">
-                {initial}
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+                <User className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
               </div>
               <div>
                 <p className="font-bold text-gray-900">{name}</p>
@@ -89,15 +98,6 @@ export default function AboutPage() {
             </div>
           ))}
 
-          {/* Coming soon: Political Director */}
-          <div className="flex items-start gap-5 max-w-sm opacity-60">
-            <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl shrink-0">+</div>
-            <div>
-              <p className="font-bold text-gray-900">Coming Soon</p>
-              <p className="text-xs text-gray-400 mb-2">Political Director</p>
-              <p className="text-sm text-gray-400">The right person to lead our political strategy and client relationships across Kenya.</p>
-            </div>
-          </div>
         </div>
       </section>
 

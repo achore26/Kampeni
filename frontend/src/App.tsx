@@ -11,6 +11,7 @@ import MediaPage from './pages/marketing/MediaPage'
 import BriefingPage from './pages/BriefingPage'
 import SentimentPage from './pages/SentimentPage'
 import OpponentPage from './pages/OpponentPage'
+import FieldReportsPage from './pages/FieldReportsPage'
 import LoginPage from './pages/LoginPage'
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
           <Route index element={<BriefingPage />} />
           <Route path="sentiment" element={<SentimentPage />} />
           <Route path="opponents" element={<OpponentPage />} />
+          <Route path="field-reports" element={<FieldReportsPage />} />
         </Route>
       </Routes>
       </BrowserRouter>

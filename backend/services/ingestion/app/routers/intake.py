@@ -1,13 +1,18 @@
-"""Field agent report intake — push-based endpoint."""
+"""Field agent report intake — push-based endpoint + read endpoints."""
 from __future__ import annotations
 
 from enum import Enum
+from uuid import UUID
 
 import redis.asyncio as aioredis
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.config import get_settings
+from shared.database import get_db
+from shared.models import FieldReportRecord
 
 router = APIRouter()
 
@@ -51,3 +56,77 @@ async def submit_field_report(report: FieldReport) -> dict:
     await r.rpush("field_reports:pending", report.model_dump_json())
     await r.aclose()
     return {"status": "accepted", "message": "Report queued for processing"}
+
+
+@router.get("/field-reports")
+async def list_field_reports(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    support_level: str | None = Query(None),
+    ward: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """List field reports with optional filters."""
+    q = select(FieldReportRecord).order_by(FieldReportRecord.created_at.desc())
+    if support_level:
+        q = q.where(FieldReportRecord.support_level == support_level)
+    if ward:
+        q = q.where(FieldReportRecord.ward == ward)
+
+    total_q = select(func.count()).select_from(q.subquery())
+    total = (await db.execute(total_q)).scalar_one()
+    rows = (await db.execute(q.offset(offset).limit(limit))).scalars().all()
+
+    return {
+        "total": total,
+        "reports": [
+            {
+                "id": str(r.id),
+                "agent_id": r.agent_id,
+                "ward": r.ward,
+                "report_type": r.report_type,
+                "top_issue": r.top_issue,
+                "support_level": r.support_level,
+                "notes": r.notes,
+                "latitude": r.latitude,
+                "longitude": r.longitude,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/field-reports/summary")
+async def field_reports_summary(db: AsyncSession = Depends(get_db)) -> dict:
+    """Aggregate counts by support level and top wards."""
+    total_row = await db.execute(select(func.count()).select_from(FieldReportRecord))
+    total = total_row.scalar_one()
+
+    support_rows = await db.execute(
+        select(FieldReportRecord.support_level, func.count().label("n"))
+        .group_by(FieldReportRecord.support_level)
+    )
+    support_counts = {row.support_level: row.n for row in support_rows}
+
+    ward_rows = await db.execute(
+        select(FieldReportRecord.ward, func.count().label("n"))
+        .group_by(FieldReportRecord.ward)
+        .order_by(func.count().desc())
+        .limit(5)
+    )
+    top_wards = [{"ward": row.ward, "count": row.n} for row in ward_rows]
+
+    issue_rows = await db.execute(
+        select(FieldReportRecord.top_issue, func.count().label("n"))
+        .group_by(FieldReportRecord.top_issue)
+        .order_by(func.count().desc())
+    )
+    issues = {row.top_issue: row.n for row in issue_rows}
+
+    return {
+        "total": total,
+        "by_support": support_counts,
+        "top_wards": top_wards,
+        "by_issue": issues,
+    }
