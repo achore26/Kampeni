@@ -48,6 +48,10 @@ htmlcov/
 .pytest_cache/
 coverage/
 
+# Build artifacts / archives
+*.zip
+*.tar.gz
+
 # Terraform
 *.tfstate
 *.tfstate.backup
