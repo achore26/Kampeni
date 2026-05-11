@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import { Download, Image, FileText, Mail, Phone, User } from 'lucide-react'
 
 const RESOURCES = [
@@ -9,6 +10,15 @@ const RESOURCES = [
 export default function MediaPage() {
   return (
     <>
+      <Helmet>
+        <title>Media & Press | Kampeni</title>
+        <meta name="description" content="Kampeni in the press. Find media resources, press kit downloads, and news coverage about Kenya's first political intelligence platform." />
+        <link rel="canonical" href="https://kampeni.co.ke/media" />
+        <meta property="og:title" content="Media & Press | Kampeni" />
+        <meta property="og:description" content="Find Kampeni media resources, press kit, and coverage of Kenya's first political intelligence platform." />
+        <meta property="og:url" content="https://kampeni.co.ke/media" />
+      </Helmet>
+
       {/* ── Header ───────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 py-32 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">Media & Press</p>

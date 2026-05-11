@@ -1,33 +1,52 @@
 import asyncio
+import sys
+import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Make sure shared/ is importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from shared.database import Base
+import shared.models  # noqa: F401 — register all mappers with Base
+
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None  # import Base.metadata once models are defined
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_migrations_online() -> None:
     connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url")  # type: ignore[arg-type]
+        config.get_main_option("sqlalchemy.url"),  # type: ignore[arg-type]
     )
     async with connectable.connect() as connection:
         await connection.run_sync(
-            lambda conn: context.configure(conn, target_metadata=target_metadata)
+            lambda conn: context.configure(
+                conn,
+                target_metadata=target_metadata,
+                compare_type=True,
+            )
         )
         async with connection.begin():
             await connection.run_sync(lambda _: context.run_migrations())
+
+    await connectable.dispose()
 
 
 if context.is_offline_mode():

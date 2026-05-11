@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { MapPin, Phone, Mail } from 'lucide-react'
 
 const POLITICAL_LEVELS = ['MCA', 'Woman Rep', 'MP', 'Senator', 'Governor']
@@ -50,6 +51,16 @@ export default function ContactPage() {
 
   return (
     <>
+      <Helmet>
+        <title>Request Early Access | Kampeni</title>
+        <meta name="description" content="Request early access to Kampeni — Kenya's first AI-powered political intelligence platform. Limited spots available for MCA, MP, Senator, Woman Rep, and Governor campaigns." />
+        <link rel="canonical" href="https://kampeni.co.ke/contact" />
+        <meta property="og:title" content="Request Early Access | Kampeni" />
+        <meta property="og:description" content="Get early access to Kampeni. Gain a decisive data advantage for your Kenyan campaign." />
+        <meta property="og:url" content="https://kampeni.co.ke/contact" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       {/* ── Header ───────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 py-32 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">Contact</p>

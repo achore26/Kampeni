@@ -11,6 +11,7 @@ from shared.models import (  # noqa: F401 — register all mappers
 )
 
 from .routers import health, opponents, scrapers
+from .routers.trigger import router as trigger_router
 
 
 @asynccontextmanager
@@ -30,3 +31,4 @@ app = FastAPI(
 app.include_router(health.router, tags=["health"])
 app.include_router(opponents.router, prefix="/opponents", tags=["opponents"])
 app.include_router(scrapers.router, prefix="/scrapers", tags=["scrapers"])
+app.include_router(trigger_router)

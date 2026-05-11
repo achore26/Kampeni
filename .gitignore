@@ -56,3 +56,8 @@ coverage/
 *.tfstate
 *.tfstate.backup
 .terraform/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local

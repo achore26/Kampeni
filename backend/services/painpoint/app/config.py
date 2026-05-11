@@ -10,6 +10,9 @@ class PainPointSettings(BaseSettings):
     # Anthropic API — leave blank to use rule-based fallback
     anthropic_api_key: str = ""
 
+    # Tarjumi API — used to expand issue keywords into Kikuyu, Luo, Kamba
+    tarjumi_api_key: str = ""
+
     # MinIO / S3
     minio_endpoint: str = "http://localhost:9000"
     minio_access_key: str = "kampeni"

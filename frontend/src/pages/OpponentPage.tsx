@@ -4,18 +4,88 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Users, Plus, X, TrendingUp, Building2 } from 'lucide-react'
+import {
+  Users, Plus, X, TrendingUp, Building2,
+  ChevronDown, ChevronUp, ExternalLink, Loader2,
+} from 'lucide-react'
 import { apiClient } from '../api/client'
 
 interface Opponent {
   id: string; name: string; constituency: string; party: string | null
   position: string | null; is_incumbent: boolean; mention_count: number
 }
+interface Mention {
+  article_id: string; article_title: string; article_url: string
+  source: string; published_at: string | null; context: string
+  mention_type: string
+}
 interface AddForm {
   name: string; constituency: string; party: string; position: string
   is_incumbent: boolean; aliases: string
 }
 const EMPTY: AddForm = { name: '', constituency: '', party: '', position: '', is_incumbent: false, aliases: '' }
+
+const SOURCE_LABEL: Record<string, string> = {
+  nation: 'Nation Africa', standard: 'Standard Media', citizen: 'Citizen Digital',
+  capitalfm: 'Capital FM', kbc: 'KBC', youtube: 'YouTube',
+  facebook: 'Facebook', facebook_pages: 'Facebook', facebook_forager: 'Facebook',
+}
+
+function MentionsFeed({ opponentId }: { opponentId: string }) {
+  const [mentions, setMentions] = useState<Mention[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiClient.get<Mention[]>(`/opponents/${opponentId}/mentions?limit=10`)
+      .then((r) => setMentions(r.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [opponentId])
+
+  if (loading) return (
+    <div className="flex items-center gap-2 py-4 px-6 text-gray-400 text-sm">
+      <Loader2 className="w-4 h-4 animate-spin" /> Loading mentions...
+    </div>
+  )
+
+  if (mentions.length === 0) return (
+    <p className="px-6 py-4 text-sm text-gray-400 italic">No mentions recorded yet — monitoring is active.</p>
+  )
+
+  return (
+    <ul className="divide-y divide-gray-50 border-t border-gray-100">
+      {mentions.map((m, i) => (
+        <li key={`${m.article_id}-${i}`} className="px-6 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <a
+                href={m.article_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-gray-900 hover:text-blue-600 flex items-start gap-1 group"
+              >
+                <span className="line-clamp-2">{m.article_title}</span>
+                <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </a>
+              {m.context && (
+                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 italic">"{m.context}"</p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                {SOURCE_LABEL[m.source] ?? m.source}
+                {m.published_at && (
+                  <> · {new Date(m.published_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}</>
+                )}
+                {m.mention_type && (
+                  <> · <span className="capitalize">{m.mention_type.replace(/_/g, ' ')}</span></>
+                )}
+              </p>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
 
 export default function OpponentPage() {
   const { t } = useTranslation()
@@ -25,6 +95,7 @@ export default function OpponentPage() {
   const [form, setForm] = useState<AddForm>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -50,6 +121,8 @@ export default function OpponentPage() {
     finally { setSaving(false) }
   }
 
+  const toggleExpand = (id: string) => setExpandedId(expandedId === id ? null : id)
+
   if (loading) return (
     <div className="flex items-center gap-3 text-gray-400 py-12">
       <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -64,9 +137,12 @@ export default function OpponentPage() {
     { label: t('opponents.position'), key: 'position', placeholder: 'MP / MCA / Governor' },
   ]
 
+  const sorted = [...opponents].sort((a, b) => b.mention_count - a.mention_count)
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('opponents.title')}</h1>
           <p className="text-gray-500 mt-1">{t('opponents.subtitle')}</p>
@@ -83,6 +159,7 @@ export default function OpponentPage() {
         </div>
       )}
 
+      {/* Add form */}
       {showForm && (
         <Card className="border-blue-100 shadow-md">
           <CardHeader>
@@ -92,18 +169,18 @@ export default function OpponentPage() {
             <CardDescription>{t('opponents.addDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               {FIELDS.map(({ label, key, placeholder }) => (
                 <div key={key}>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">{label}</label>
                   <Input value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} placeholder={placeholder} />
                 </div>
               ))}
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('opponents.aliases')}</label>
                 <Input value={form.aliases} onChange={(e) => setForm({ ...form, aliases: e.target.value })} placeholder={t('opponents.aliasesPlaceholder')} />
               </div>
-              <div className="col-span-2 flex items-center gap-2">
+              <div className="col-span-1 sm:col-span-2 flex items-center gap-2">
                 <input type="checkbox" id="incumbent" checked={form.is_incumbent}
                   onChange={(e) => setForm({ ...form, is_incumbent: e.target.checked })}
                   className="rounded border-gray-300 text-blue-600" />
@@ -122,6 +199,7 @@ export default function OpponentPage() {
         </Card>
       )}
 
+      {/* Stats */}
       {opponents.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           {[
@@ -139,6 +217,7 @@ export default function OpponentPage() {
         </div>
       )}
 
+      {/* Opponents list with expandable mentions */}
       <Card>
         <CardContent className="p-0">
           {opponents.length === 0 ? (
@@ -149,31 +228,53 @@ export default function OpponentPage() {
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">
-              {opponents.sort((a, b) => b.mention_count - a.mention_count).map((opp, i) => (
-                <li key={opp.id} className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <span className="w-6 text-center text-sm font-bold text-gray-300">#{i + 1}</span>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                      {opp.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900 text-sm">{opp.name}</span>
-                        {opp.is_incumbent && <Badge variant="warning" className="text-xs">{t('opponents.incumbentBadge')}</Badge>}
+              {sorted.map((opp, i) => (
+                <li key={opp.id}>
+                  {/* Opponent row */}
+                  <button
+                    onClick={() => toggleExpand(opp.id)}
+                    className="w-full px-4 md:px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                      <span className="w-5 text-center text-sm font-bold text-gray-300 shrink-0">#{i + 1}</span>
+                      <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                        {opp.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400">
-                        <Building2 className="w-3 h-3" />
-                        {[opp.position, opp.party, opp.constituency].filter(Boolean).join(' · ')}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-gray-900 text-sm">{opp.name}</span>
+                          {opp.is_incumbent && <Badge variant="warning" className="text-xs">{t('opponents.incumbentBadge')}</Badge>}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400">
+                          <Building2 className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{[opp.position, opp.party, opp.constituency].filter(Boolean).join(' · ')}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <TrendingUp className={`w-4 h-4 ${opp.mention_count > 0 ? 'text-blue-500' : 'text-gray-200'}`} />
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">{opp.mention_count}</p>
-                      <p className="text-xs text-gray-400">{t('opponents.mentions')}</p>
+                    <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                      <div className="text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <TrendingUp className={`w-3.5 h-3.5 ${opp.mention_count > 0 ? 'text-blue-500' : 'text-gray-200'}`} />
+                          <p className="text-lg font-bold text-gray-900">{opp.mention_count}</p>
+                        </div>
+                        <p className="text-xs text-gray-400">{t('opponents.mentions')}</p>
+                      </div>
+                      {expandedId === opp.id
+                        ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                        : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                      }
                     </div>
-                  </div>
+                  </button>
+
+                  {/* Expanded mentions feed */}
+                  {expandedId === opp.id && (
+                    <div className="bg-gray-50/50">
+                      <div className="px-6 pt-2 pb-1">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recent Mentions</p>
+                      </div>
+                      <MentionsFeed opponentId={opp.id} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

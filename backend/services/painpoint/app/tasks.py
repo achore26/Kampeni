@@ -1,15 +1,6 @@
-"""Pain point extraction tasks.
+"""Pain point extraction tasks — called directly by the trigger router.
 
-Flow:
-  Redis queue (articles:painpoint:pending)
-    ↓
-  Fetch translated object from MinIO
-    ↓
-  Extract issues via PainPointExtractor (Claude API or rule fallback)
-    ↓
-  Store pain points to PostgreSQL (pain_points table)
-    ↓
-  Push article_id to Redis (articles:embed:pending) for future RAG embeddings
+No Celery. Prefect schedules this via POST /trigger/painpoints every 2 minutes.
 """
 from __future__ import annotations
 
@@ -25,7 +16,6 @@ from shared.database import Base, SyncSessionLocal, sync_engine
 from shared.models import PainPoint
 
 from .extractor import PainPointExtractor
-from .worker import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +28,6 @@ def _ensure_tables() -> None:
     Base.metadata.create_all(bind=sync_engine)
 
 
-@celery_app.task
 def process_pending_pain_points() -> dict:
     """Pop items from painpoint queue, extract issues, persist to Postgres."""
     _ensure_tables()
@@ -111,12 +100,10 @@ def process_pending_pain_points() -> dict:
                 db.add(record)
             db.commit()
 
-        # Push to embedding queue for RAG indexing
         r.rpush(REDIS_EMBED_KEY, json.dumps({
             "article_id": article_id,
             "translation_key": translation_key,
         }))
-
         processed += 1
 
     r.close()

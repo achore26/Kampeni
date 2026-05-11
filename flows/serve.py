@@ -1,34 +1,67 @@
-"""Prefect flow server — runs all flows and registers their schedules.
+"""Prefect flow server — registers all flows and their schedules.
 
 This is the entry point for the prefect-worker container.
-It connects to the Prefect server and registers 4 scheduled deployments:
+Connects to the Prefect server and registers scheduled deployments.
 
-  news-pipeline         → every 30 minutes
-  field-reports         → every 5 minutes
-  daily-briefing-gen    → 5am EAT (2am UTC) daily
-  daily-briefing-del    → 6am EAT (3am UTC) daily
+Schedule overview:
+  news-pipeline           → every 30 minutes (ingestion → sentiment → translation)
+  social-pipeline         → every 60 minutes (Facebook pages + forager → translation)
+  translation-pipeline    → every 2 minutes  (drain translate queue)
+  painpoint-pipeline      → every 2 minutes  (drain painpoint queue)
+  opponent-pipeline       → every 10 minutes (scan for opponent mentions)
+  field-reports-pipeline  → every 5 minutes  (drain field reports queue)
+  daily-briefing-gen      → 5am EAT (2am UTC) daily
+  daily-briefing-del      → 6am EAT (3am UTC) daily
 
-To manually trigger any flow, open the Prefect UI at http://localhost:4200,
-find the deployment, and click "Quick Run".
+Prefect is the single source of scheduling truth. All services run tasks
+synchronously — no Celery workers, no Celery Beat.
+
+To manually trigger any flow: Prefect UI → http://localhost:4200 → Quick Run.
 """
-import asyncio
-
 from prefect import serve
 
 from news_pipeline import news_pipeline
+from social_pipeline import social_pipeline
+from translation_pipeline import translation_pipeline
+from painpoint_pipeline import painpoint_pipeline
+from opponent_pipeline import opponent_pipeline
 from field_reports_pipeline import field_reports_pipeline
 from daily_briefing import daily_briefing_generate, daily_briefing_deliver
 
 
-async def main() -> None:
-    await serve(
-        # Every 30 minutes
+if __name__ == "__main__":
+    serve(
+        # Every 30 minutes — Nation, Standard, Citizen, CapitalFM, KBC, YouTube
         news_pipeline.to_deployment(
             name="news-pipeline",
             cron="*/30 * * * *",
-            description="Scrape Nation/Standard/Citizen RSS → classify sentiment",
+            description="Scrape RSS feeds + YouTube → sentiment → translation",
         ),
-        # Every 5 minutes
+        # Every 60 minutes — Facebook public pages + keyword forager
+        social_pipeline.to_deployment(
+            name="social-pipeline",
+            cron="0 * * * *",
+            description="Facebook page scraper + political/painpoint keyword forager → translation",
+        ),
+        # Every 2 minutes — drain translation queue (non-EN/SW articles)
+        translation_pipeline.to_deployment(
+            name="translation-pipeline",
+            cron="*/2 * * * *",
+            description="Translate non-EN/SW articles and push to painpoint queue",
+        ),
+        # Every 2 minutes — drain painpoint queue (AI issue extraction)
+        painpoint_pipeline.to_deployment(
+            name="painpoint-pipeline",
+            cron="*/2 * * * *",
+            description="Extract civic pain points from translated articles",
+        ),
+        # Every 10 minutes — scan recent articles for opponent mentions
+        opponent_pipeline.to_deployment(
+            name="opponent-pipeline",
+            cron="*/10 * * * *",
+            description="Scan articles for registered opponent mentions",
+        ),
+        # Every 5 minutes — field agent reports from Redis → Postgres
         field_reports_pipeline.to_deployment(
             name="field-reports-pipeline",
             cron="*/5 * * * *",
@@ -47,7 +80,3 @@ async def main() -> None:
             description="Deliver approved briefings to candidates (6am EAT)",
         ),
     )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

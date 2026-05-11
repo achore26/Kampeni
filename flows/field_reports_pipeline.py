@@ -13,17 +13,19 @@ import requests
 from prefect import flow, task, get_run_logger
 
 INGESTION_URL = os.getenv("INGESTION_SERVICE_URL", "http://ingestion:8004")
+_SECRET = os.getenv("INTERNAL_TRIGGER_SECRET", "")
+_HEADERS = {"X-Internal-Secret": _SECRET}
 
 
 @task(retries=3, retry_delay_seconds=15)
-def trigger_field_report_processing() -> str:
+def trigger_field_report_processing() -> dict:
     """Tell the ingestion service to process pending field reports from Redis."""
     logger = get_run_logger()
-    response = requests.post(f"{INGESTION_URL}/trigger/field-reports", timeout=10)
+    response = requests.post(f"{INGESTION_URL}/trigger/field-reports", headers=_HEADERS, timeout=60)
     response.raise_for_status()
     data = response.json()
-    logger.info("Field report processing queued — Celery task ID: %s", data["task_id"])
-    return data["task_id"]
+    logger.info("Field reports done: %s", data)
+    return data
 
 
 @flow(name="field-reports-pipeline", log_prints=True)

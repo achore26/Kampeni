@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { ArrowUpRight, CheckCircle2, XCircle } from 'lucide-react'
 
 const COUNTIES = [
@@ -44,6 +45,18 @@ export default function HomePage() {
 
   return (
     <>
+      <Helmet>
+        <title>Kampeni | Kenya's Political Intelligence Platform</title>
+        <meta name="description" content="Kenya's first AI-powered political intelligence platform. Win elections with real-time voter insights, opponent tracking, and daily campaign briefings across all 47 counties." />
+        <link rel="canonical" href="https://kampeni.co.ke/" />
+        <meta property="og:title" content="Kampeni | Kenya's Political Intelligence Platform" />
+        <meta property="og:description" content="Kenya's first AI-powered political intelligence platform. Win elections with real-time voter insights, opponent tracking, and daily campaign briefings." />
+        <meta property="og:url" content="https://kampeni.co.ke/" />
+        <meta property="og:image" content="https://kampeni.co.ke/Home%20Hero.png" />
+        <meta name="twitter:title" content="Kampeni | Kenya's Political Intelligence Platform" />
+        <meta name="twitter:description" content="Kenya's first AI-powered political intelligence platform. Win with data, not guesswork." />
+      </Helmet>
+
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-0">
         <div className="grid md:grid-cols-2 gap-8 items-end pb-12">

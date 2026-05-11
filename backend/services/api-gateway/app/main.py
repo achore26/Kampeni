@@ -1,18 +1,23 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints
 
+_app_env = os.getenv("APP_ENV", "development")
+_cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+
 app = FastAPI(
     title="Kampeni API Gateway",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if _app_env != "production" else None,
+    redoc_url="/redoc" if _app_env != "production" else None,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[_cors_origin],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

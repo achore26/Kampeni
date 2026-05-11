@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { BarChart2, Users, MapPin, TrendingUp } from 'lucide-react'
 
 const FEATURES = [
@@ -51,6 +52,15 @@ const FEATURES = [
 export default function FeaturesPage() {
   return (
     <>
+      <Helmet>
+        <title>Features | Kampeni Political Intelligence Platform</title>
+        <meta name="description" content="Real-time voter insights, opponent intelligence, smart resource allocation, and daily briefings. Kampeni gives your campaign a decisive data advantage across Kenya's 47 counties." />
+        <link rel="canonical" href="https://kampeni.co.ke/features" />
+        <meta property="og:title" content="Features | Kampeni Political Intelligence Platform" />
+        <meta property="og:description" content="Real-time voter insights, opponent intelligence, smart resource allocation, and daily briefings. Kampeni gives your campaign a decisive data advantage." />
+        <meta property="og:url" content="https://kampeni.co.ke/features" />
+      </Helmet>
+
       {/* ── Header ───────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 py-32 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">Platform Features</p>

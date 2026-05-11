@@ -2,7 +2,11 @@
 
 Native RSS (https://www.citizen.digital/rss) returned 401 as of 2026-04 — feed is behind auth.
 Using Google News RSS proxy which indexes Citizen Digital articles in real time.
-Swap back to native URL if Citizen restores public RSS access.
+
+NOTE: feedparser returns Google News redirect URLs (news.google.com/rss/articles/...) as
+the entry link, not the real citizen.digital URL. These redirect via a JS splash page that
+httpx cannot follow. Content is therefore limited to the RSS summary (~80 chars).
+Full-content scraping is not feasible without JS rendering (Playwright/Selenium) — deferred.
 """
 from .base import BaseScraper, ScrapedArticle
 from .rss import fetch_rss

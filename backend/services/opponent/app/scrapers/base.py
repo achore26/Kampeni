@@ -27,7 +27,7 @@ class BaseScraper(ABC):
 
     def __init__(self) -> None:
         self._client = httpx.AsyncClient(
-            headers={"User-Agent": "KampeniBot/1.0 (+https://kampeni.co.ke/bot)"},
+            headers={"User-Agent": "KampeniBot/1.0 (+https://kampeni.net/bot)"},
             timeout=30.0,
             follow_redirects=True,
         )

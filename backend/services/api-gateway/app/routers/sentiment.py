@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query
 
+from shared.auth import CurrentUser
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -27,7 +28,7 @@ async def _proxy_get(path: str, params: dict | None = None) -> dict:
 
 
 @router.get("/dashboard")
-async def sentiment_dashboard(candidate_id: str | None = Query(None)) -> dict:
+async def sentiment_dashboard(user: CurrentUser, candidate_id: str | None = Query(None)) -> dict:
     """Per-candidate sentiment breakdown."""
     if candidate_id:
         return await _proxy_get(f"/sentiment/dashboard/{candidate_id}")
@@ -36,6 +37,7 @@ async def sentiment_dashboard(candidate_id: str | None = Query(None)) -> dict:
 
 @router.get("/articles")
 async def sentiment_articles(
+    user: CurrentUser,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ) -> dict:
@@ -44,12 +46,21 @@ async def sentiment_articles(
 
 
 @router.get("/summary")
-async def sentiment_summary() -> dict:
+async def sentiment_summary(user: CurrentUser) -> dict:
     """Overall positive / negative / neutral counts."""
     return await _proxy_get("/sentiment/summary")
 
 
+@router.get("/trend")
+async def sentiment_trend(
+    user: CurrentUser,
+    days: int = Query(7, ge=1, le=30),
+) -> list:
+    """Daily sentiment breakdown for the last N days."""
+    return await _proxy_get("/sentiment/trend", {"days": days})
+
+
 @router.get("/wards")
-async def ward_sentiment() -> dict:
+async def ward_sentiment(user: CurrentUser) -> dict:
     """Ward-level sentiment breakdown — requires geolocation tagging (Month 3)."""
     return {"wards": [], "note": "Requires geolocation tagging — scheduled for Month 3"}

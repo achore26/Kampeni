@@ -4,6 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from shared.auth import CurrentUser
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -39,33 +40,34 @@ async def _proxy_post(path: str, body: dict) -> dict:
 
 
 @router.get("/")
-async def list_opponents(candidate_id: str | None = Query(None)) -> list:
+async def list_opponents(user: CurrentUser, candidate_id: str | None = Query(None)) -> list:
     """List all tracked opponents with total mention counts."""
     params = {"candidate_id": candidate_id} if candidate_id else None
     return await _proxy_get("/opponents/", params)
 
 
 @router.post("/")
-async def add_opponent(request: Request) -> dict:
+async def add_opponent(user: CurrentUser, request: Request) -> dict:
     """Register a new opponent to monitor."""
     body = await request.json()
     return await _proxy_post("/opponents/", body)
 
 
 @router.get("/daily-digest")
-async def daily_digest(opponent_id: str = Query(...)) -> list:
+async def daily_digest(user: CurrentUser, opponent_id: str = Query(...)) -> list:
     """Last 24h mentions for an opponent."""
     return await _proxy_get(f"/opponents/{opponent_id}/daily-digest")
 
 
 @router.get("/{opponent_id}/profile")
-async def opponent_profile(opponent_id: str) -> dict:
+async def opponent_profile(user: CurrentUser, opponent_id: str) -> dict:
     """Full profile + mention stats."""
     return await _proxy_get(f"/opponents/{opponent_id}/profile")
 
 
 @router.get("/{opponent_id}/mentions")
 async def opponent_mentions(
+    user: CurrentUser,
     opponent_id: str,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),

@@ -1,6 +1,7 @@
 """Sentiment API — backed by real PostgreSQL data."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -114,6 +115,40 @@ async def get_sentiment_summary(
         neutral=breakdown.get("neutral", 0),
         total=total,
     )
+
+
+@router.get("/trend")
+async def get_sentiment_trend(
+    db: DbSession,
+    days: int = Query(7, ge=1, le=30),
+) -> list[dict]:
+    """Daily sentiment breakdown for the last N days. Returns [{date, positive, negative, neutral}]."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    stmt = (
+        select(
+            func.date(Article.published_at).label("date"),
+            SentimentRecord.label,
+            func.count(SentimentRecord.id).label("count"),
+        )
+        .join(Article, Article.id == SentimentRecord.article_id)
+        .where(Article.published_at >= cutoff)
+        .where(Article.published_at.is_not(None))
+        .group_by(func.date(Article.published_at), SentimentRecord.label)
+        .order_by(func.date(Article.published_at).asc())
+    )
+
+    result = await db.execute(stmt)
+
+    by_date: dict[str, dict] = {}
+    for row in result.all():
+        date_str = str(row.date)
+        if date_str not in by_date:
+            by_date[date_str] = {"date": date_str, "positive": 0, "negative": 0, "neutral": 0}
+        if row.label in ("positive", "negative", "neutral"):
+            by_date[date_str][row.label] = row.count
+
+    return sorted(by_date.values(), key=lambda x: x["date"])
 
 
 @router.get("/dashboard/{candidate_id}")

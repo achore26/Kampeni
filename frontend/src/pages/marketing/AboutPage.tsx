@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import { User } from 'lucide-react'
 
 const TEAM = [
@@ -37,6 +38,15 @@ const WHY_KAMPENI = [
 export default function AboutPage() {
   return (
     <>
+      <Helmet>
+        <title>About Kampeni | Built by Kenyans for Kenyan Leaders</title>
+        <meta name="description" content="Meet the team behind Kampeni. Our mission: give every Kenyan candidate — from MCA to Governor — a decisive data advantage powered by AI and real-time intelligence." />
+        <link rel="canonical" href="https://kampeni.co.ke/about" />
+        <meta property="og:title" content="About Kampeni | Built by Kenyans for Kenyan Leaders" />
+        <meta property="og:description" content="Meet the team behind Kampeni, Kenya's first political intelligence platform. Our mission: data-driven leadership for every Kenyan candidate." />
+        <meta property="og:url" content="https://kampeni.co.ke/about" />
+      </Helmet>
+
       {/* ── Header ───────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 py-32 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">Our Story</p>

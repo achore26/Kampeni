@@ -1,19 +1,6 @@
-"""Translation tasks — pops pending articles from Redis, translates, stores back to MinIO.
+"""Translation tasks — called directly by the trigger router.
 
-Flow:
-  Redis queue (articles:translate:pending)
-    ↓
-  Fetch raw object from MinIO
-    ↓
-  Detect language (if not already tagged)
-    ↓
-  Translate to English via TranslationEngine
-    ↓
-  Store translated version to MinIO (translations/{article_id}.json)
-    ↓
-  Push article_id to Redis queue (articles:painpoint:pending)
-    ↓
-  Pain point extraction service picks up
+No Celery. Prefect schedules this via POST /trigger/translate every minute.
 """
 from __future__ import annotations
 
@@ -26,7 +13,6 @@ from shared import storage
 from shared.config import get_settings
 
 from .engine import TranslationEngine, SUPPORTED_LANGUAGES
-from .worker import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +21,6 @@ REDIS_OUTPUT_KEY = "articles:painpoint:pending"
 BATCH_SIZE = 20
 
 
-@celery_app.task
 def process_pending_translations() -> dict:
     """Pop article IDs from Redis, translate raw content, push to pain point queue."""
     settings = get_settings()
@@ -67,7 +52,6 @@ def process_pending_translations() -> dict:
 
         language = raw.get("language_detected", "en")
 
-        # Skip translation if already in a supported language
         if language in SUPPORTED_LANGUAGES:
             translation_record = {
                 "article_id": article_id,
@@ -81,7 +65,6 @@ def process_pending_translations() -> dict:
         else:
             title_result = engine.translate(raw.get("title", ""), language)
             content_result = engine.translate(raw.get("content", "")[:2000], language)
-
             translation_record = {
                 "article_id": article_id,
                 "original_language": language,
@@ -102,7 +85,6 @@ def process_pending_translations() -> dict:
             errors += 1
             continue
 
-        # Push to pain point queue
         r.rpush(REDIS_OUTPUT_KEY, json.dumps({
             "article_id": article_id,
             "translation_key": storage.translation_key(article_id),
@@ -110,7 +92,6 @@ def process_pending_translations() -> dict:
             "language": language,
             "used_mock": translation_record.get("used_mock", False),
         }))
-
         processed += 1
 
     r.close()
@@ -118,9 +99,8 @@ def process_pending_translations() -> dict:
     return {"processed": processed, "skipped": skipped, "errors": errors}
 
 
-@celery_app.task
 def enqueue_article_for_translation(article_id: str, raw_key: str) -> None:
-    """Called by ingestion service to push a new article into the translation queue."""
+    """Push a single article into the translation queue."""
     settings = get_settings()
     r = redis_sync.from_url(settings.redis_url, decode_responses=True)
     r.rpush(REDIS_INPUT_KEY, json.dumps({"article_id": article_id, "raw_key": raw_key}))

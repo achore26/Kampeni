@@ -4,6 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from shared.auth import CurrentUser
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -27,7 +28,7 @@ async def _proxy_get(path: str, params: dict | None = None) -> dict:
 
 
 @router.post("/field-report", status_code=202)
-async def submit_field_report(request: Request) -> dict:
+async def submit_field_report(user: CurrentUser, request: Request) -> dict:
     """Accept a field agent report and forward to ingestion service for queuing."""
     body = await request.json()
     async with httpx.AsyncClient(timeout=10.0) as client:
@@ -43,6 +44,7 @@ async def submit_field_report(request: Request) -> dict:
 
 @router.get("/field-reports")
 async def list_field_reports(
+    user: CurrentUser,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     support_level: str | None = Query(None),
@@ -58,6 +60,6 @@ async def list_field_reports(
 
 
 @router.get("/field-reports/summary")
-async def field_reports_summary() -> dict:
+async def field_reports_summary(user: CurrentUser) -> dict:
     """Aggregate counts: by support level, top wards, top issues."""
     return await _proxy_get("/intake/field-reports/summary")

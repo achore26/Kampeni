@@ -1,0 +1,288 @@
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { AlertTriangle, MapPin, Tag, ChevronDown } from 'lucide-react'
+import { apiClient } from '../api/client'
+
+interface PainPointItem {
+  id: string; article_id: string; category: string; description: string
+  severity: 'high' | 'medium' | 'low'; location: string | null
+  county: string | null; constituency: string | null
+  politicians: string[]; confidence: number; used_mock: boolean; created_at: string
+}
+interface Summary { by_category: { category: string; count: number }[]; total: number }
+interface CountyData { by_county: { county: string; count: number }[] }
+interface ListData { total: number; items: PainPointItem[] }
+
+const SEVERITY_VARIANT: Record<string, 'negative' | 'warning' | 'neutral'> = {
+  high: 'negative', medium: 'warning', low: 'neutral',
+}
+const SEVERITY_LABEL: Record<string, { en: string; sw: string }> = {
+  high: { en: 'High', sw: 'Juu' },
+  medium: { en: 'Medium', sw: 'Wastani' },
+  low: { en: 'Low', sw: 'Chini' },
+}
+
+const CATEGORY_ICON: Record<string, string> = {
+  jobs: '💼', water: '💧', school_fees: '📚', roads: '🛣️',
+  security: '🛡️', health: '🏥', corruption: '⚖️', economy: '📈',
+  housing: '🏠', food: '🌽', other: '•',
+}
+
+export default function PainPointsPage() {
+  const { i18n } = useTranslation()
+  const isEn = i18n.language === 'en'
+  const [summary, setSummary] = useState<Summary | null>(null)
+  const [counties, setCounties] = useState<CountyData | null>(null)
+  const [items, setItems] = useState<PainPointItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [severityFilter, setSeverityFilter] = useState<string>('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const loadItems = (severity: string) => {
+    const params = severity !== 'all' ? `?severity=${severity}&limit=50` : '?limit=50'
+    return apiClient.get<ListData>(`/painpoints/${params}`)
+  }
+
+  useEffect(() => {
+    Promise.all([
+      apiClient.get<Summary>('/painpoints/summary'),
+      apiClient.get<CountyData>('/painpoints/by-county'),
+      loadItems('all'),
+    ])
+      .then(([s, c, l]) => {
+        setSummary(s.data)
+        setCounties(c.data)
+        setItems(l.data.items ?? [])
+        setTotal(l.data.total ?? 0)
+      })
+      .catch(() => setError(isEn ? 'Could not load pain point data' : 'Imeshindwa kupakia data'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleFilter = (severity: string) => {
+    setSeverityFilter(severity)
+    loadItems(severity)
+      .then((r) => { setItems(r.data.items ?? []); setTotal(r.data.total ?? 0) })
+      .catch(() => {})
+  }
+
+  if (loading) return (
+    <div className="flex items-center gap-3 text-gray-400 py-12">
+      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      {isEn ? 'Loading pain points...' : 'Inapakia matatizo...'}
+    </div>
+  )
+  if (error) return <p className="text-red-600 bg-red-50 rounded-lg px-4 py-3 text-sm">{error}</p>
+
+  const topCategories = (summary?.by_category ?? []).slice(0, 5)
+  const topCounties = (counties?.by_county ?? []).slice(0, 5)
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isEn ? 'Citizen Pain Points' : 'Matatizo ya Wananchi'}
+        </h1>
+        <p className="text-gray-400 mt-0.5 text-sm">
+          {isEn
+            ? `${total} issues extracted from news and social media`
+            : `Matatizo ${total} yaliyotolewa kutoka kwenye habari na mitandao ya kijamii`}
+        </p>
+      </div>
+
+      {/* Top stat */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: isEn ? 'Total Issues' : 'Jumla ya Matatizo', value: summary?.total ?? 0, color: '#1d4ed8' },
+          { label: isEn ? 'High Severity' : 'Hatari Kubwa', value: items.filter(i => i.severity === 'high').length, color: '#dc2626' },
+          { label: isEn ? 'Counties Covered' : 'Kaunti Zilizofunikwa', value: topCounties.length, color: '#d97706' },
+        ].map(({ label, value, color }) => (
+          <Card key={label} className="relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: color }} />
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">{label}</p>
+              <p className="text-3xl font-bold" style={{ color }}>{value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Two-column: by category + by county */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+              <Tag className="w-4 h-4 text-gray-400" />
+              {isEn ? 'Top Issues by Category' : 'Matatizo kwa Aina'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {topCategories.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">
+                {isEn ? 'No data yet' : 'Hakuna data bado'}
+              </p>
+            ) : (
+              <ul className="space-y-2.5">
+                {topCategories.map(({ category, count }) => (
+                  <li key={category} className="flex items-center gap-3">
+                    <span className="text-base w-6 text-center">{CATEGORY_ICON[category] ?? '•'}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900 capitalize">
+                          {category.replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-xs text-gray-400">{count}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${summary?.total ? (count / summary.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-400" />
+              {isEn ? 'Most Affected Counties' : 'Kaunti Zilizoathirika Zaidi'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {topCounties.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">
+                {isEn ? 'No county data yet' : 'Hakuna data ya kaunti bado'}
+              </p>
+            ) : (
+              <ul className="space-y-2.5">
+                {topCounties.map(({ county, count }, i) => (
+                  <li key={county} className="flex items-center gap-3">
+                    <span className="w-5 text-xs font-bold text-gray-300 text-center">#{i + 1}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900">{county}</span>
+                        <span className="text-xs text-gray-400">{count}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-400 rounded-full"
+                          style={{ width: `${summary?.total ? (count / summary.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Issues list */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-gray-400" />
+                {isEn ? 'All Issues' : 'Matatizo Yote'}
+                <span className="text-xs font-normal text-gray-400 normal-case">({total})</span>
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {isEn ? 'Extracted from articles via AI analysis' : 'Yaliyotolewa kutoka makala kwa uchambuzi wa AI'}
+              </CardDescription>
+            </div>
+            <div className="flex gap-1.5">
+              {['all', 'high', 'medium', 'low'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleFilter(s)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    severityFilter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {s === 'all' ? (isEn ? 'All' : 'Zote') : (isEn ? SEVERITY_LABEL[s].en : SEVERITY_LABEL[s].sw)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {items.length === 0 ? (
+            <div className="py-16 text-center text-gray-400">
+              <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium text-gray-600">
+                {isEn ? 'No pain points extracted yet' : 'Hakuna matatizo yaliyotolewa bado'}
+              </p>
+              <p className="text-sm mt-1 text-gray-400">
+                {isEn ? 'Pain points are extracted automatically from news articles' : 'Matatizo hutolewa kiotomatiki kutoka makala za habari'}
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-50">
+              {items.map((item) => (
+                <li key={item.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <span className="text-base mt-0.5">{CATEGORY_ICON[item.category] ?? '•'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <Badge variant={SEVERITY_VARIANT[item.severity]} className="text-xs">
+                          {isEn ? SEVERITY_LABEL[item.severity].en : SEVERITY_LABEL[item.severity].sw}
+                        </Badge>
+                        <span className="text-xs text-gray-500 capitalize">{item.category.replace(/_/g, ' ')}</span>
+                        {item.county && (
+                          <span className="text-xs text-gray-400 flex items-center gap-0.5">
+                            <MapPin className="w-3 h-3" />{item.county}
+                          </span>
+                        )}
+                        {item.used_mock && (
+                          <Badge variant="neutral" className="text-xs">mock</Badge>
+                        )}
+                      </div>
+                      <p
+                        className={`text-sm text-gray-800 leading-relaxed ${expandedId !== item.id ? 'line-clamp-2' : ''}`}
+                      >
+                        {item.description}
+                      </p>
+                      {item.description.length > 120 && (
+                        <button
+                          onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                          className="text-xs text-blue-500 hover:text-blue-600 mt-0.5 flex items-center gap-0.5"
+                        >
+                          {expandedId === item.id ? (isEn ? 'Less' : 'Punguza') : (isEn ? 'More' : 'Zaidi')}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${expandedId === item.id ? 'rotate-180' : ''}`} />
+                        </button>
+                      )}
+                      {item.politicians.length > 0 && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {isEn ? 'Mentioned:' : 'Wametajwa:'} {item.politicians.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-gray-400">
+                        {new Date(item.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}
+                      </p>
+                      <p className="text-xs text-gray-300 mt-0.5">{Math.round(item.confidence * 100)}%</p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

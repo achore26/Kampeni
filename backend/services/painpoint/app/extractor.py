@@ -48,16 +48,68 @@ KENYA_COUNTIES = [
 ]
 
 ISSUE_KEYWORDS: dict[str, list[str]] = {
-    "water": ["water", "maji", "drought", "ukame", "taps", "borehole", "irrigation"],
-    "roads": ["road", "barabara", "tarmac", "potholes", "bridge", "daraja"],
-    "health": ["hospital", "clinic", "health", "afya", "medicine", "dawa", "doctor"],
-    "security": ["crime", "robbery", "usalama", "police", "gang", "bandit"],
-    "education": ["school", "shule", "teacher", "mwalimu", "fees", "ada", "exam"],
-    "economy": ["jobs", "kazi", "unemployment", "business", "biashara", "poverty", "umaskini"],
-    "land": ["land", "ardhi", "eviction", "title deed", "grabbing"],
-    "electricity": ["power", "umeme", "electricity", "blackout", "solar"],
-    "food": ["food", "chakula", "hunger", "njaa", "famine", "baa la njaa"],
-    "corruption": ["corruption", "ufisadi", "bribe", "rushwa", "embezzle"],
+    # Each list covers: English + Swahili + Kikuyu (ki) + Luo (luo) + Kamba (kam)
+    # Tarjumi /v1/keywords is used at runtime to extend these for other languages
+    "water": [
+        "water", "maji", "drought", "ukame", "taps", "borehole", "irrigation",
+        "maaî", "mũgũnda wa maaî",      # Kikuyu
+        "pi", "pi ok",                   # Luo
+        "maa", "nzeve ya maa",           # Kamba
+    ],
+    "roads": [
+        "road", "barabara", "tarmac", "potholes", "bridge", "daraja",
+        "njira", "ũũndũ wa njira",       # Kikuyu
+        "yo", "yo maradha",              # Luo
+        "nzila", "nzila mbii",           # Kamba
+    ],
+    "health": [
+        "hospital", "clinic", "health", "afya", "medicine", "dawa", "doctor",
+        "ūgwati", "itura",               # Kikuyu
+        "jomruok", "yweyo",              # Luo
+        "ūvoo", "ivia",                  # Kamba
+    ],
+    "security": [
+        "crime", "robbery", "usalama", "police", "gang", "bandit",
+        "ūgaaĩ", "thirikari",            # Kikuyu
+        "teko", "loch",                  # Luo
+        "ūseo", "askai",                 # Kamba
+    ],
+    "education": [
+        "school", "shule", "teacher", "mwalimu", "fees", "ada", "exam",
+        "ũhoti", "mwarimu",              # Kikuyu
+        "puonj", "japuonj",              # Luo
+        "ūsomo", "mwalimu",              # Kamba
+    ],
+    "economy": [
+        "jobs", "kazi", "unemployment", "business", "biashara", "poverty", "umaskini",
+        "wĩra", "ūhoro wa wĩra",         # Kikuyu
+        "tich", "dhier",                 # Luo
+        "musyi", "ūndũ wa kũseo",        # Kamba
+    ],
+    "land": [
+        "land", "ardhi", "eviction", "title deed", "grabbing",
+        "mũgũnda", "gũtwarwo",           # Kikuyu
+        "lowo", "gonyo",                 # Luo
+        "ithĩ", "kũnyĩĩtwa",            # Kamba
+    ],
+    "electricity": [
+        "power", "umeme", "electricity", "blackout", "solar",
+        "ũmeme",                         # Kikuyu (borrowed)
+        "taya",                          # Luo
+        "ūmeme",                         # Kamba (borrowed)
+    ],
+    "food": [
+        "food", "chakula", "hunger", "njaa", "famine", "baa la njaa",
+        "irio", "njĩra",                 # Kikuyu
+        "chiemo", "kech",                # Luo
+        "iĩ", "nzala",                   # Kamba
+    ],
+    "corruption": [
+        "corruption", "ufisadi", "bribe", "rushwa", "embezzle",
+        "ũkoru", "gĩthũngũ",            # Kikuyu
+        "mibadhi", "ruka",               # Luo
+        "ūkoru", "kũibia",               # Kamba
+    ],
 }
 
 SEVERITY_HIGH = ["no", "zero", "lack", "crisis", "emergency", "acute", "severe", "dead", "died"]
@@ -87,10 +139,54 @@ class PainPointExtractor:
 
     def __init__(self) -> None:
         self._settings = get_settings()
+        # Cache enriched keyword sets per language so we only call Tarjumi once
+        # per language per process lifetime (saves rate limit quota)
+        self._keyword_cache: dict[str, dict[str, list[str]]] = {}
 
     @property
     def _api_ready(self) -> bool:
         return bool(self._settings.anthropic_api_key)
+
+    def _keywords_for_language(self, language: str) -> dict[str, list[str]]:
+        """Return issue keywords enriched for a specific language via Tarjumi.
+
+        For English and Swahili the static ISSUE_KEYWORDS are sufficient.
+        For Kikuyu, Luo, Kamba etc., we call Tarjumi /v1/keywords once and
+        cache the result so we don't burn quota on every article.
+        """
+        if language in ("en", "sw") or not self._settings.tarjumi_api_key:
+            return ISSUE_KEYWORDS
+
+        if language in self._keyword_cache:
+            return self._keyword_cache[language]
+
+        enriched: dict[str, list[str]] = {}
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                for category in ISSUE_KEYWORDS:
+                    r = client.post(
+                        "https://api.thexi.dev/v1/keywords",
+                        json={
+                            "concept": category,
+                            "target_languages": [language],
+                            "include_colloquial": True,
+                        },
+                        headers={"Authorization": f"Bearer {self._settings.tarjumi_api_key}"},
+                    )
+                    if r.status_code == 200:
+                        translations = r.json().get("translations", {})
+                        lang_data = translations.get(language, {})
+                        extra = lang_data.get("formal", []) + lang_data.get("colloquial", [])
+                        enriched[category] = ISSUE_KEYWORDS[category] + extra
+                    else:
+                        enriched[category] = ISSUE_KEYWORDS[category]
+        except Exception as exc:
+            logger.warning("Tarjumi keyword enrichment failed for lang=%s: %s", language, exc)
+            return ISSUE_KEYWORDS
+
+        self._keyword_cache[language] = enriched
+        logger.info("Cached Tarjumi keyword enrichment for language=%s", language)
+        return enriched
 
     def extract(self, title: str, content: str, source_language: str = "en") -> ExtractionResult:
         text = f"{title}. {content}"
@@ -99,7 +195,7 @@ class PainPointExtractor:
                 return self._extract_via_claude(text)
             except Exception as exc:
                 logger.warning("Claude extraction failed: %s — falling back to rule engine", exc)
-        return self._rule_extract(text)
+        return self._rule_extract(text, source_language)
 
     def _extract_via_claude(self, text: str) -> ExtractionResult:
         prompt = (
@@ -149,15 +245,18 @@ class PainPointExtractor:
             ))
         return ExtractionResult(issues=issues, used_mock=False)
 
-    def _rule_extract(self, text: str) -> ExtractionResult:
-        """Keyword-based fallback. Low precision but keeps the pipeline running."""
+    def _rule_extract(self, text: str, source_language: str = "en") -> ExtractionResult:
+        """Keyword-based fallback. Uses Tarjumi-enriched keywords for non-English articles."""
         text_lower = text.lower()
         issues: list[ExtractedIssue] = []
 
         # Detect county
         county = next((c for c in KENYA_COUNTIES if c.lower() in text_lower), None)
 
-        for category, keywords in ISSUE_KEYWORDS.items():
+        # Use language-enriched keywords if the article is in Kikuyu, Luo, Kamba etc.
+        keywords_map = self._keywords_for_language(source_language)
+
+        for category, keywords in keywords_map.items():
             if not any(kw in text_lower for kw in keywords):
                 continue
 

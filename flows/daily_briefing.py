@@ -20,28 +20,31 @@ import requests
 from prefect import flow, task, get_run_logger
 
 BRIEFING_URL = os.getenv("BRIEFING_SERVICE_URL", "http://briefing:8003")
+_SECRET = os.getenv("INTERNAL_TRIGGER_SECRET", "")
+_HEADERS = {"X-Internal-Secret": _SECRET}
 
 
 @task(retries=2, retry_delay_seconds=60)
-def trigger_briefing_generation() -> str:
+def trigger_briefing_generation() -> dict:
     """Tell the briefing service to generate AI briefs for all active candidates."""
     logger = get_run_logger()
-    response = requests.post(f"{BRIEFING_URL}/trigger/generate", timeout=15)
+    # GPT-4o generation can take a while for multiple candidates
+    response = requests.post(f"{BRIEFING_URL}/trigger/generate", headers=_HEADERS, timeout=300)
     response.raise_for_status()
     data = response.json()
-    logger.info("Briefing generation queued — Celery task ID: %s", data["task_id"])
-    return data["task_id"]
+    logger.info("Briefing generation done: %s", data)
+    return data
 
 
 @task(retries=2, retry_delay_seconds=60)
-def trigger_briefing_delivery() -> str:
+def trigger_briefing_delivery() -> dict:
     """Tell the briefing service to deliver approved briefings to candidates."""
     logger = get_run_logger()
-    response = requests.post(f"{BRIEFING_URL}/trigger/deliver", timeout=15)
+    response = requests.post(f"{BRIEFING_URL}/trigger/deliver", headers=_HEADERS, timeout=120)
     response.raise_for_status()
     data = response.json()
-    logger.info("Briefing delivery queued — Celery task ID: %s", data["task_id"])
-    return data["task_id"]
+    logger.info("Briefing delivery done: %s", data)
+    return data
 
 
 @flow(name="daily-briefing-generate", log_prints=True)

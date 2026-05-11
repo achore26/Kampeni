@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import { useAuth0 } from '@auth0/auth0-react'
 import SplashScreen from './components/SplashScreen'
+import ProtectedRoute from './components/ProtectedRoute'
 import MarketingLayout from './layouts/MarketingLayout'
 import DashboardLayout from './layouts/DashboardLayout'
 import HomePage from './pages/marketing/HomePage'
@@ -12,19 +14,22 @@ import BriefingPage from './pages/BriefingPage'
 import SentimentPage from './pages/SentimentPage'
 import OpponentPage from './pages/OpponentPage'
 import FieldReportsPage from './pages/FieldReportsPage'
+import PainPointsPage from './pages/PainPointsPage'
 import LoginPage from './pages/LoginPage'
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
+  const { isLoading } = useAuth0()
 
   function handleSplashComplete() {
     setShowSplash(false)
   }
 
+  if (isLoading) return null
+
   return (
     <>
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-      <BrowserRouter>
       <Routes>
         {/* Marketing site — public, dark theme */}
         <Route element={<MarketingLayout />}>
@@ -38,15 +43,22 @@ export default function App() {
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Dashboard — light theme, will be auth-protected in Month 2 */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        {/* Dashboard — protected */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<BriefingPage />} />
           <Route path="sentiment" element={<SentimentPage />} />
           <Route path="opponents" element={<OpponentPage />} />
           <Route path="field-reports" element={<FieldReportsPage />} />
+          <Route path="painpoints" element={<PainPointsPage />} />
         </Route>
       </Routes>
-      </BrowserRouter>
     </>
   )
 }

@@ -20,8 +20,9 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-kampeni_redis_dev}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -39,7 +40,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     ports:
-      - "9001:9000"
+      - "9002:9000"
       - "8123:8123"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
@@ -52,8 +53,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9090"
     ports:
-      - "9000:9000"   # S3 API
-      - "9090:9090"   # MinIO console UI
+      - "9000:9000"             # S3 API (needed by services on host for local dev)
+      - "127.0.0.1:9090:9090"  # MinIO console — local access only
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kampeni}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
@@ -80,7 +81,7 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - QDRANT_HOST=qdrant
       - SENTIMENT_SERVICE_URL=http://sentiment:8001
       - OPPONENT_SERVICE_URL=http://opponent:8002
@@ -95,7 +96,7 @@ services:
       dockerfile: services/ingestion/Dockerfile
     env_file: .env
     ports:
-      - "8004:8004"
+      - "127.0.0.1:8004:8004"
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,32 +106,11 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
       - MINIO_BUCKET=kampeni-raw
-
-  ingestion-worker:
-    build:
-      context: ./backend
-      dockerfile: services/ingestion/Dockerfile
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
-      - MINIO_BUCKET=kampeni-raw
-    command: celery -A app.worker worker --loglevel=info
 
   sentiment:
     build:
@@ -138,7 +118,7 @@ services:
       dockerfile: services/sentiment/Dockerfile
     env_file: .env
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -148,24 +128,8 @@ services:
         condition: service_started
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - QDRANT_HOST=qdrant
-
-  sentiment-worker:
-    build:
-      context: ./backend
-      dockerfile: services/sentiment/Dockerfile
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - QDRANT_HOST=qdrant
-    command: celery -A app.worker worker --loglevel=info
 
   opponent:
     build:
@@ -173,7 +137,7 @@ services:
       dockerfile: services/opponent/Dockerfile
     env_file: .env
     ports:
-      - "8002:8002"
+      - "127.0.0.1:8002:8002"
     depends_on:
       postgres:
         condition: service_healthy
@@ -181,22 +145,7 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
-
-  opponent-worker:
-    build:
-      context: ./backend
-      dockerfile: services/opponent/Dockerfile
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
-    command: celery -A app.worker worker --loglevel=info
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
 
   briefing:
     build:
@@ -204,7 +153,7 @@ services:
       dockerfile: services/briefing/Dockerfile
     env_file: .env
     ports:
-      - "8003:8003"
+      - "127.0.0.1:8003:8003"
     depends_on:
       postgres:
         condition: service_healthy
@@ -212,7 +161,7 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
 
   translation:
     build:
@@ -220,36 +169,18 @@ services:
       dockerfile: services/translation/Dockerfile
     env_file: .env
     ports:
-      - "8005:8005"
+      - "127.0.0.1:8005:8005"
     depends_on:
       redis:
         condition: service_healthy
       minio:
         condition: service_healthy
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
       - MINIO_BUCKET=kampeni-raw
-
-  translation-worker:
-    build:
-      context: ./backend
-      dockerfile: services/translation/Dockerfile
-    env_file: .env
-    depends_on:
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
-      - MINIO_BUCKET=kampeni-raw
-    command: celery -A app.worker worker --loglevel=info
 
   painpoint:
     build:
@@ -257,7 +188,7 @@ services:
       dockerfile: services/painpoint/Dockerfile
     env_file: .env
     ports:
-      - "8006:8006"
+      - "127.0.0.1:8006:8006"
     depends_on:
       postgres:
         condition: service_healthy
@@ -267,39 +198,18 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
       - MINIO_BUCKET=kampeni-raw
-
-  painpoint-worker:
-    build:
-      context: ./backend
-      dockerfile: services/painpoint/Dockerfile
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-kampeni_dev_secret}
-      - MINIO_BUCKET=kampeni-raw
-    command: celery -A app.worker worker --loglevel=info
 
   # ─── Orchestration (Prefect) ──────────────────────────────────────────────
   prefect-server:
     image: prefecthq/prefect:3-latest
     command: prefect server start --host 0.0.0.0
     ports:
-      - "4200:4200"
+      - "127.0.0.1:4200:4200"
     environment:
       - PREFECT_UI_API_URL=http://localhost:4200/api
     volumes:
@@ -319,6 +229,10 @@ services:
       - INGESTION_SERVICE_URL=http://ingestion:8004
       - SENTIMENT_SERVICE_URL=http://sentiment:8001
       - BRIEFING_SERVICE_URL=http://briefing:8003
+      - TRANSLATION_SERVICE_URL=http://translation:8005
+      - PAINPOINT_SERVICE_URL=http://painpoint:8006
+      - OPPONENT_SERVICE_URL=http://opponent:8002
+      - INTERNAL_TRIGGER_SECRET=${INTERNAL_TRIGGER_SECRET}
     depends_on:
       prefect-server:
         condition: service_healthy
@@ -328,16 +242,34 @@ services:
         condition: service_started
       briefing:
         condition: service_started
+      translation:
+        condition: service_started
+      painpoint:
+        condition: service_started
+      opponent:
+        condition: service_started
 
   # ─── Frontend ─────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN}
+        - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID}
+        - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE}
+        - VITE_API_URL=${VITE_API_URL:-/api/v1}
+        - VITE_CANDIDATE_ID=${VITE_CANDIDATE_ID}
     ports:
       - "3000:3000"
     environment:
       - API_GATEWAY_URL=http://api-gateway:8000
+      - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN}
+      - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID}
+      - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE}
+      - VITE_CANDIDATE_ID=${VITE_CANDIDATE_ID}
+    volumes:
+      - ./frontend/src:/app/src
     depends_on:
       - api-gateway
 

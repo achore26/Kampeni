@@ -1,4 +1,7 @@
-"""Sentiment classification Celery tasks."""
+"""Sentiment classification — called directly by the trigger router.
+
+No Celery. Prefect schedules this via POST /trigger/sentiment.
+"""
 from __future__ import annotations
 
 import logging
@@ -8,18 +11,15 @@ import redis as redis_sync
 
 from shared.config import get_settings
 from shared.database import Base, SyncSessionLocal, sync_engine
-from shared.models import Article
-from shared.models import SentimentRecord  # noqa: F401
+from shared.models import Article, SentimentRecord
 
 from .nlp.classifier import SentimentClassifier
-from .worker import celery_app
 
 logger = logging.getLogger(__name__)
 REDIS_PENDING_KEY = "articles:pending"
 BATCH_SIZE = 50
 
 
-@celery_app.task
 def process_pending_articles() -> dict:
     """Pop article IDs from Redis, classify sentiment, store results."""
     Base.metadata.create_all(bind=sync_engine)

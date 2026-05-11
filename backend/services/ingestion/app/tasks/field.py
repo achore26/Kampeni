@@ -1,7 +1,6 @@
-"""Field agent report processing tasks.
+"""Field agent report processing — called directly by the trigger router.
 
-Flow: Redis queue (field_reports:pending) → parse JSON → store FieldReportRecord in Postgres.
-Runs every 5 minutes via Celery beat.
+No Celery. Prefect schedules this via POST /trigger/field-reports every 5 minutes.
 """
 from __future__ import annotations
 
@@ -12,10 +11,7 @@ import redis as redis_sync
 
 from shared.config import get_settings
 from shared.database import Base, SyncSessionLocal, sync_engine
-from shared.models import FieldReportRecord
-from shared.models import Article, SentimentRecord  # noqa: F401 — register mappers
-
-from ..worker import celery_app
+from shared.models import FieldReportRecord, Article, SentimentRecord  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +19,6 @@ REDIS_FIELD_KEY = "field_reports:pending"
 BATCH_SIZE = 100
 
 
-@celery_app.task
 def process_pending_field_reports() -> dict:
     """Pop field agent reports from Redis queue, validate, and store in Postgres."""
     Base.metadata.create_all(bind=sync_engine)
@@ -71,7 +66,6 @@ def process_pending_field_reports() -> dict:
     return {"processed": processed, "errors": errors}
 
 
-@celery_app.task
 def ingest_field_report(report_data: dict) -> None:
     """Process a single report submitted directly (not via queue)."""
     logger.info("Field report received from ward: %s", report_data.get("ward", "unknown"))
