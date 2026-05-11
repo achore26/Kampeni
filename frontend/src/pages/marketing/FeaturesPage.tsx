@@ -55,10 +55,10 @@ export default function FeaturesPage() {
       <Helmet>
         <title>Features | Kampeni Political Intelligence Platform</title>
         <meta name="description" content="Real-time voter insights, opponent intelligence, smart resource allocation, and daily briefings. Kampeni gives your campaign a decisive data advantage across Kenya's 47 counties." />
-        <link rel="canonical" href="https://kampeni.co.ke/features" />
+        <link rel="canonical" href="https://kampeni.net/features" />
         <meta property="og:title" content="Features | Kampeni Political Intelligence Platform" />
         <meta property="og:description" content="Real-time voter insights, opponent intelligence, smart resource allocation, and daily briefings. Kampeni gives your campaign a decisive data advantage." />
-        <meta property="og:url" content="https://kampeni.co.ke/features" />
+        <meta property="og:url" content="https://kampeni.net/features" />
       </Helmet>
 
       {/* ── Header ───────────────────────────────────────────────────── */}

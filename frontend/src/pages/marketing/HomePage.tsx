@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { ArrowUpRight, CheckCircle2, XCircle } from 'lucide-react'
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
+
 const COUNTIES = [
   'Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay',
   'Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu',
@@ -36,10 +38,25 @@ const STATS = [
 export default function HomePage() {
   const [earlyAccess, setEarlyAccess] = useState({ email: '', county: '', level: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit() {
-    if (earlyAccess.email && earlyAccess.county && earlyAccess.level) {
+  async function handleSubmit() {
+    if (!earlyAccess.email || !earlyAccess.county || !earlyAccess.level) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/waitlist/early-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(earlyAccess),
+      })
+      if (!res.ok) throw new Error('Request failed')
       setSubmitted(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -48,11 +65,11 @@ export default function HomePage() {
       <Helmet>
         <title>Kampeni | Kenya's Political Intelligence Platform</title>
         <meta name="description" content="Kenya's first AI-powered political intelligence platform. Win elections with real-time voter insights, opponent tracking, and daily campaign briefings across all 47 counties." />
-        <link rel="canonical" href="https://kampeni.co.ke/" />
+        <link rel="canonical" href="https://kampeni.net/" />
         <meta property="og:title" content="Kampeni | Kenya's Political Intelligence Platform" />
         <meta property="og:description" content="Kenya's first AI-powered political intelligence platform. Win elections with real-time voter insights, opponent tracking, and daily campaign briefings." />
-        <meta property="og:url" content="https://kampeni.co.ke/" />
-        <meta property="og:image" content="https://kampeni.co.ke/Home%20Hero.png" />
+        <meta property="og:url" content="https://kampeni.net/" />
+        <meta property="og:image" content="https://kampeni.net/Home%20Hero.png" />
         <meta name="twitter:title" content="Kampeni | Kenya's Political Intelligence Platform" />
         <meta name="twitter:description" content="Kenya's first AI-powered political intelligence platform. Win with data, not guesswork." />
       </Helmet>
@@ -199,10 +216,14 @@ export default function HomePage() {
               </div>
               <button
                 onClick={handleSubmit}
-                className="btn-primary w-full md:w-auto px-10 py-3 rounded text-sm mb-4"
+                disabled={loading}
+                className="btn-primary w-full md:w-auto px-10 py-3 rounded text-sm mb-4 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Request Early Access
+                {loading ? 'Submitting…' : 'Request Early Access'}
               </button>
+              {error && (
+                <p className="text-xs text-red-400 mb-2">{error}</p>
+              )}
               <p className="text-xs text-gray-600">Limited early access available</p>
             </>
           )}

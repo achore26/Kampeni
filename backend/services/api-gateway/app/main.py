@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints
+from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints, waitlist
 
 _app_env = os.getenv("APP_ENV", "development")
 _cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:3000")
@@ -31,3 +31,4 @@ app.include_router(opponent.router, prefix="/api/v1/opponents", tags=["opponents
 app.include_router(briefing.router, prefix="/api/v1/briefings", tags=["briefings"])
 app.include_router(intake.router, prefix="/api/v1/intake", tags=["intake"])
 app.include_router(painpoints.router, prefix="/api/v1/painpoints", tags=["painpoints"])
+app.include_router(waitlist.router, prefix="/api/v1/waitlist", tags=["waitlist"])

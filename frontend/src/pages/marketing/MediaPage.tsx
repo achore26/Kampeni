@@ -13,10 +13,10 @@ export default function MediaPage() {
       <Helmet>
         <title>Media & Press | Kampeni</title>
         <meta name="description" content="Kampeni in the press. Find media resources, press kit downloads, and news coverage about Kenya's first political intelligence platform." />
-        <link rel="canonical" href="https://kampeni.co.ke/media" />
+        <link rel="canonical" href="https://kampeni.net/media" />
         <meta property="og:title" content="Media & Press | Kampeni" />
         <meta property="og:description" content="Find Kampeni media resources, press kit, and coverage of Kenya's first political intelligence platform." />
-        <meta property="og:url" content="https://kampeni.co.ke/media" />
+        <meta property="og:url" content="https://kampeni.net/media" />
       </Helmet>
 
       {/* ── Header ───────────────────────────────────────────────────── */}

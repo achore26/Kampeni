@@ -9,6 +9,10 @@ class GatewaySettings(BaseSettings):
     translation_service_url: str = "http://translation:8005"
     painpoint_service_url: str = "http://painpoint:8006"
 
+    resend_api_key: str = ""
+    email_from_address: str = "noreply@kampeni.net"
+    email_from_name: str = "Kampeni"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

@@ -54,10 +54,10 @@ export default function ContactPage() {
       <Helmet>
         <title>Request Early Access | Kampeni</title>
         <meta name="description" content="Request early access to Kampeni — Kenya's first AI-powered political intelligence platform. Limited spots available for MCA, MP, Senator, Woman Rep, and Governor campaigns." />
-        <link rel="canonical" href="https://kampeni.co.ke/contact" />
+        <link rel="canonical" href="https://kampeni.net/contact" />
         <meta property="og:title" content="Request Early Access | Kampeni" />
         <meta property="og:description" content="Get early access to Kampeni. Gain a decisive data advantage for your Kenyan campaign." />
-        <meta property="og:url" content="https://kampeni.co.ke/contact" />
+        <meta property="og:url" content="https://kampeni.net/contact" />
         <meta name="robots" content="noindex, follow" />
       </Helmet>
 

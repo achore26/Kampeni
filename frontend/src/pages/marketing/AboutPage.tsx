@@ -41,10 +41,10 @@ export default function AboutPage() {
       <Helmet>
         <title>About Kampeni | Built by Kenyans for Kenyan Leaders</title>
         <meta name="description" content="Meet the team behind Kampeni. Our mission: give every Kenyan candidate — from MCA to Governor — a decisive data advantage powered by AI and real-time intelligence." />
-        <link rel="canonical" href="https://kampeni.co.ke/about" />
+        <link rel="canonical" href="https://kampeni.net/about" />
         <meta property="og:title" content="About Kampeni | Built by Kenyans for Kenyan Leaders" />
         <meta property="og:description" content="Meet the team behind Kampeni, Kenya's first political intelligence platform. Our mission: data-driven leadership for every Kenyan candidate." />
-        <meta property="og:url" content="https://kampeni.co.ke/about" />
+        <meta property="og:url" content="https://kampeni.net/about" />
       </Helmet>
 
       {/* ── Header ───────────────────────────────────────────────────── */}
