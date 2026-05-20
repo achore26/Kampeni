@@ -129,27 +129,49 @@ def deliver_approved_briefings() -> dict:
     return {"delivered": delivered, "skipped": skipped, "errors": errors}
 
 
-def _deliver_briefing(briefing: Briefing) -> list[str]:
-    """Send briefing content via available channels. Returns list of successful channels."""
-    channels: list[str] = []
+def _get_phone(candidate_id: str) -> str | None:
+    """Look up E.164 phone number for a candidate from CANDIDATE_PHONES env map."""
+    import json
+    try:
+        phones: dict = json.loads(settings.candidate_phones or "{}")
+        return phones.get(candidate_id)
+    except (json.JSONDecodeError, TypeError):
+        logger.error("CANDIDATE_PHONES is not valid JSON — check your .env")
+        return None
 
+
+def _deliver_briefing(briefing: Briefing) -> list[str]:
+    """Send briefing via available channels. Returns list of successful channel names."""
+    channels: list[str] = []
     sections = briefing.sections or []
     sms_text = _format_sms(sections, briefing.briefing_date)
+    phone = _get_phone(briefing.candidate_id)
 
-    if settings.at_api_key and settings.at_username:
+    if not phone:
+        logger.warning(
+            "No phone number for candidate %s — add to CANDIDATE_PHONES in .env. "
+            "Format: {\"candidate-id\": \"+254712345678\"}",
+            briefing.candidate_id,
+        )
+    elif not (settings.at_api_key and settings.at_username):
+        logger.warning(
+            "AT_API_KEY or AT_USERNAME not set — skipping SMS delivery for briefing %s. "
+            "Get your key at account.africastalking.com",
+            briefing.id,
+        )
+    else:
         try:
-            _send_sms(briefing.candidate_id, sms_text)
+            _send_sms_at(phone, sms_text)
             channels.append("sms")
         except Exception as exc:
             logger.warning("SMS delivery failed for briefing %s: %s", briefing.id, exc)
 
+    # TODO: WhatsApp via Meta Business API (Month 4)
     # TODO: FCM push notification (Month 5)
-    # TODO: Email via SendGrid (Month 5)
 
     if not channels:
-        logger.warning(
-            "No delivery channels available for briefing %s. "
-            "Set AT_API_KEY + AT_USERNAME in .env for SMS delivery.",
+        logger.info(
+            "Briefing %s generated but not delivered — configure AT_API_KEY + CANDIDATE_PHONES",
             briefing.id,
         )
 
@@ -157,19 +179,19 @@ def _deliver_briefing(briefing: Briefing) -> list[str]:
 
 
 def _format_sms(sections: list[dict], briefing_date) -> str:
-    """Condense briefing to fit SMS constraints (~300 chars for multi-part SMS)."""
+    """Condense briefing to fit SMS constraints. Africa's Talking splits multi-part automatically."""
     lines = [f"KAMPENI BRIEF — {briefing_date}"]
     for section in sections[:3]:
         title = section.get("title", "")
         content = section.get("content", "")
         lines.append(f"\n{title}:\n{content[:120]}")
-    return "\n".join(lines)[:900]  # Africa's Talking handles splitting
+    return "\n".join(lines)[:900]
 
 
-def _send_sms(candidate_id: str, message: str) -> None:
-    """Send SMS via Africa's Talking API."""
+def _send_sms_at(phone: str, message: str) -> None:
+    """Send SMS via Africa's Talking API to a single E.164 phone number."""
     import africastalking
     africastalking.initialize(settings.at_username, settings.at_api_key)
     sms = africastalking.SMS
-    response = sms.send(message, [candidate_id], sender_id="KAMPENI")
-    logger.debug("AT SMS response: %s", response)
+    response = sms.send(message, [phone], sender_id="KAMPENI")
+    logger.info("AT SMS sent to %s — response: %s", phone, response)

@@ -15,6 +15,9 @@ import SentimentPage from './pages/SentimentPage'
 import OpponentPage from './pages/OpponentPage'
 import FieldReportsPage from './pages/FieldReportsPage'
 import PainPointsPage from './pages/PainPointsPage'
+import MapPage from './pages/MapPage'
+import AIDashboardPage from './pages/AIDashboardPage'
+import FieldSubmitPage from './pages/FieldSubmitPage'
 import LoginPage from './pages/LoginPage'
 
 export default function App() {
@@ -43,6 +46,9 @@ export default function App() {
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* Field agent — minimal mobile layout, no dashboard sidebar */}
+        <Route path="/field" element={<FieldSubmitPage />} />
+
         {/* Dashboard — protected */}
         <Route
           path="/dashboard"
@@ -57,6 +63,8 @@ export default function App() {
           <Route path="opponents" element={<OpponentPage />} />
           <Route path="field-reports" element={<FieldReportsPage />} />
           <Route path="painpoints" element={<PainPointsPage />} />
+          <Route path="map" element={<MapPage />} />
+          <Route path="ai-dashboard" element={<AIDashboardPage />} />
         </Route>
       </Routes>
     </>

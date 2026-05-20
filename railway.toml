@@ -1,0 +1,59 @@
+# Kampeni Intelligence — Railway deployment config
+# Deploy: connect this repo in Railway dashboard → Railway auto-detects this file
+
+[build]
+builder = "DOCKERFILE"
+
+# ── Services are deployed as separate Railway services ──────────────────────
+# In Railway dashboard: create one service per section below, each pointing at
+# the same repo but with a different Root Directory and the vars below.
+
+# ── api-gateway ─────────────────────────────────────────────────────────────
+# Root Directory: backend/services/api-gateway
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Env vars to set in Railway dashboard:
+#   APP_ENV=production
+#   POSTGRES_HOST=${{Postgres.PGHOST}}
+#   POSTGRES_PORT=${{Postgres.PGPORT}}
+#   POSTGRES_DB=${{Postgres.PGDATABASE}}
+#   POSTGRES_USER=${{Postgres.PGUSER}}
+#   POSTGRES_PASSWORD=${{Postgres.PGPASSWORD}}
+#   REDIS_URL=${{Redis.REDIS_URL}}
+#   AUTH0_DOMAIN=dev-vrovqw5w4cxdhkwb.eu.auth0.com
+#   AUTH0_AUDIENCE=https://api.kampeni.net
+#   AUTH0_CLIENT_ID=ZaiEBzLeTsh8NGa3sooSIoTFhYrU02XI
+#   CORS_ORIGIN=https://kampeni.pages.dev
+#   RESEND_API_KEY=re_fB744UEF_5TzF5SUGemGZNyExbzk7noK6
+#   EMAIL_FROM_ADDRESS=noreply@kampeni.net
+#   ANTHROPIC_API_KEY=<your key>
+#   SENTIMENT_SERVICE_URL=https://<sentiment-service>.railway.app
+#   OPPONENT_SERVICE_URL=https://<opponent-service>.railway.app
+#   BRIEFING_SERVICE_URL=https://<briefing-service>.railway.app
+#   INGESTION_SERVICE_URL=https://<ingestion-service>.railway.app
+#   PAINPOINT_SERVICE_URL=https://<painpoint-service>.railway.app
+
+# ── sentiment ────────────────────────────────────────────────────────────────
+# Root Directory: backend/services/sentiment
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+# ── opponent ─────────────────────────────────────────────────────────────────
+# Root Directory: backend/services/opponent
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+# ── briefing ─────────────────────────────────────────────────────────────────
+# Root Directory: backend/services/briefing
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Extra env vars:
+#   OPENAI_API_KEY=<your key>
+#   AT_API_KEY=<your Africa's Talking key>
+#   AT_USERNAME=<your AT username>
+#   CANDIDATE_IDS=<comma separated candidate IDs>
+#   CANDIDATE_PHONES={"<candidate-id>": "+254712345678"}
+
+# ── ingestion ────────────────────────────────────────────────────────────────
+# Root Directory: backend/services/ingestion
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+# ── painpoint ────────────────────────────────────────────────────────────────
+# Root Directory: backend/services/painpoint
+# Start Command:  uvicorn app.main:app --host 0.0.0.0 --port $PORT

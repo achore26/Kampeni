@@ -19,6 +19,8 @@ class BriefingSettings(BaseSettings):
     # Africa's Talking — SMS delivery
     at_api_key: str = ""
     at_username: str = ""
+    # JSON map: {"candidate-id": "+254712345678"} — phone numbers for SMS delivery
+    candidate_phones: str = "{}"
 
     # Briefing config
     # Comma-separated candidate IDs to generate briefings for.

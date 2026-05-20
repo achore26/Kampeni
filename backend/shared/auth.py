@@ -97,3 +97,53 @@ async def verify_token(
 
 
 CurrentUser = Annotated[dict, Depends(verify_token)]
+
+# Custom claim namespace set via Auth0 Actions
+_CLAIM_NS = "https://kampeni.net"
+
+
+def get_candidate_id(user: CurrentUser) -> str:
+    """Extract candidate_id from JWT custom claims.
+
+    Auth0 Actions inject this as a namespaced claim. Falls back to the user's
+    sub (user ID) so every user is automatically scoped — no data leaks between
+    candidates even before Auth0 Actions are configured.
+    """
+    for key in (f"{_CLAIM_NS}/candidate_id", "candidate_id"):
+        if cid := user.get(key):
+            return str(cid)
+    return user.get("sub", "default")
+
+
+def get_user_roles(user: dict) -> list[str]:
+    """Return the user's Kampeni roles from JWT custom claims."""
+    return user.get(f"{_CLAIM_NS}/roles", [])
+
+
+def require_roles(*allowed: str):
+    """Dependency factory — raises 403 unless the user holds at least one of *allowed* roles.
+
+    In dev mode (no Auth0, no roles claim) all role checks are bypassed so local
+    development doesn't require a full Auth0 setup.
+    """
+    async def _check(user: CurrentUser) -> dict:
+        roles = get_user_roles(user)
+        if not roles:
+            # Dev bypass: no roles claim means Auth0 Actions aren't configured yet
+            return user
+        if not any(r in roles for r in allowed):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Required role: {' or '.join(allowed)}",
+            )
+        return user
+    return Depends(_check)
+
+
+CandidateId = Annotated[str, Depends(get_candidate_id)]
+
+# Pre-built role guards — use these as route dependencies
+PoliticalDirectorOrAbove = require_roles("political_director", "candidate")
+CampaignManagerOrAbove   = require_roles("campaign_manager", "political_director", "candidate")
+AnalystOrAbove           = require_roles("analyst", "campaign_manager", "political_director", "candidate")
+AnyRole                  = require_roles("field_agent", "analyst", "campaign_manager", "political_director", "candidate")

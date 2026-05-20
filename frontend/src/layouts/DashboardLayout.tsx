@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BarChart2, Users, Newspaper, ClipboardList, AlertTriangle, LogOut, Globe, Menu, X } from 'lucide-react'
+import { BarChart2, Users, Newspaper, ClipboardList, AlertTriangle, LogOut, Globe, Menu, X, Map, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth0 } from '@auth0/auth0-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,8 +10,10 @@ const NAV_ITEMS = [
   { to: '/dashboard', labelKey: 'nav.briefing', icon: Newspaper, end: true },
   { to: '/dashboard/sentiment', labelKey: 'nav.sentiment', icon: BarChart2, end: false },
   { to: '/dashboard/opponents', labelKey: 'nav.opponents', icon: Users, end: false },
+  { to: '/dashboard/map', labelKey: 'nav.map', icon: Map, end: false },
   { to: '/dashboard/field-reports', labelKey: 'nav.fieldReports', icon: ClipboardList, end: false },
   { to: '/dashboard/painpoints', labelKey: 'nav.painpoints', icon: AlertTriangle, end: false },
+  { to: '/dashboard/ai-dashboard', labelKey: 'nav.aiDashboard', icon: Sparkles, end: false },
 ]
 
 // Sidebar background: deep navy

@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, MapPin, Tag, ChevronDown } from 'lucide-react'
 import { apiClient } from '../api/client'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend,
+} from 'recharts'
 
 interface PainPointItem {
   id: string; article_id: string; category: string; description: string
@@ -24,10 +28,24 @@ const SEVERITY_LABEL: Record<string, { en: string; sw: string }> = {
   low: { en: 'Low', sw: 'Chini' },
 }
 
+const CATEGORY_COLORS = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#eff6ff']
+
 const CATEGORY_ICON: Record<string, string> = {
   jobs: '💼', water: '💧', school_fees: '📚', roads: '🛣️',
   security: '🛡️', health: '🏥', corruption: '⚖️', economy: '📈',
   housing: '🏠', food: '🌽', other: '•',
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2">
+        <p className="text-xs font-semibold text-gray-700 capitalize">{label}</p>
+        <p className="text-xs text-blue-600">{payload[0].value} issues</p>
+      </div>
+    )
+  }
+  return null
 }
 
 export default function PainPointsPage() {
@@ -36,6 +54,7 @@ export default function PainPointsPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [counties, setCounties] = useState<CountyData | null>(null)
   const [items, setItems] = useState<PainPointItem[]>([])
+  const [allItems, setAllItems] = useState<PainPointItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +76,7 @@ export default function PainPointsPage() {
         setSummary(s.data)
         setCounties(c.data)
         setItems(l.data.items ?? [])
+        setAllItems(l.data.items ?? [])
         setTotal(l.data.total ?? 0)
       })
       .catch(() => setError(isEn ? 'Could not load pain point data' : 'Imeshindwa kupakia data'))
@@ -78,8 +98,20 @@ export default function PainPointsPage() {
   )
   if (error) return <p className="text-red-600 bg-red-50 rounded-lg px-4 py-3 text-sm">{error}</p>
 
-  const topCategories = (summary?.by_category ?? []).slice(0, 5)
+  const categoryChartData = (summary?.by_category ?? []).slice(0, 8).map(({ category, count }) => ({
+    name: category.replace(/_/g, ' '),
+    count,
+    key: category,
+  }))
+
+  const severityData = [
+    { name: isEn ? 'High' : 'Juu', value: allItems.filter(i => i.severity === 'high').length, color: '#dc2626' },
+    { name: isEn ? 'Medium' : 'Wastani', value: allItems.filter(i => i.severity === 'medium').length, color: '#f97316' },
+    { name: isEn ? 'Low' : 'Chini', value: allItems.filter(i => i.severity === 'low').length, color: '#86efac' },
+  ].filter(d => d.value > 0)
+
   const topCounties = (counties?.by_county ?? []).slice(0, 5)
+  const maxCounty = Math.max(...topCounties.map(c => c.count), 1)
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -95,11 +127,11 @@ export default function PainPointsPage() {
         </p>
       </div>
 
-      {/* Top stat */}
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: isEn ? 'Total Issues' : 'Jumla ya Matatizo', value: summary?.total ?? 0, color: '#1d4ed8' },
-          { label: isEn ? 'High Severity' : 'Hatari Kubwa', value: items.filter(i => i.severity === 'high').length, color: '#dc2626' },
+          { label: isEn ? 'High Severity' : 'Hatari Kubwa', value: allItems.filter(i => i.severity === 'high').length, color: '#dc2626' },
           { label: isEn ? 'Counties Covered' : 'Kaunti Zilizofunikwa', value: topCounties.length, color: '#d97706' },
         ].map(({ label, value, color }) => (
           <Card key={label} className="relative overflow-hidden">
@@ -112,82 +144,138 @@ export default function PainPointsPage() {
         ))}
       </div>
 
-      {/* Two-column: by category + by county */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
+      {/* Charts row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Category bar chart — spans 2 cols */}
+        <Card className="md:col-span-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
               <Tag className="w-4 h-4 text-gray-400" />
-              {isEn ? 'Top Issues by Category' : 'Matatizo kwa Aina'}
+              {isEn ? 'Issues by Category' : 'Matatizo kwa Aina'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            {topCategories.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">
+          <CardContent className="pt-0 pb-4">
+            {categoryChartData.length === 0 ? (
+              <p className="text-sm text-gray-400 py-8 text-center">
                 {isEn ? 'No data yet' : 'Hakuna data bado'}
               </p>
             ) : (
-              <ul className="space-y-2.5">
-                {topCategories.map(({ category, count }) => (
-                  <li key={category} className="flex items-center gap-3">
-                    <span className="text-base w-6 text-center">{CATEGORY_ICON[category] ?? '•'}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-900 capitalize">
-                          {category.replace(/_/g, ' ')}
-                        </span>
-                        <span className="text-xs text-gray-400">{count}</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${summary?.total ? (count / summary.total) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={categoryChartData}
+                  layout="vertical"
+                  margin={{ top: 4, right: 20, bottom: 4, left: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 11, fill: '#9ca3af' }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: '#374151' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={80}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                    {categoryChartData.map((entry, i) => (
+                      <Cell key={entry.key} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
+        {/* Severity donut */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              {isEn ? 'Most Affected Counties' : 'Kaunti Zilizoathirika Zaidi'}
+              <AlertTriangle className="w-4 h-4 text-gray-400" />
+              {isEn ? 'Severity' : 'Kiwango'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            {topCounties.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">
-                {isEn ? 'No county data yet' : 'Hakuna data ya kaunti bado'}
+          <CardContent className="pt-0 pb-4">
+            {severityData.length === 0 ? (
+              <p className="text-sm text-gray-400 py-8 text-center">
+                {isEn ? 'No data' : 'Hakuna data'}
               </p>
             ) : (
-              <ul className="space-y-2.5">
-                {topCounties.map(({ county, count }, i) => (
-                  <li key={county} className="flex items-center gap-3">
-                    <span className="w-5 text-xs font-bold text-gray-300 text-center">#{i + 1}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-900">{county}</span>
-                        <span className="text-xs text-gray-400">{count}</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full"
-                          style={{ width: `${summary?.total ? (count / summary.total) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={severityData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={52}
+                    outerRadius={76}
+                    dataKey="value"
+                    startAngle={90}
+                    endAngle={-270}
+                    paddingAngle={2}
+                  >
+                    {severityData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 8 }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* County breakdown */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            {isEn ? 'Most Affected Counties' : 'Kaunti Zilizoathirika Zaidi'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {topCounties.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4 text-center">
+              {isEn ? 'No county data yet' : 'Hakuna data ya kaunti bado'}
+            </p>
+          ) : (
+            <ul className="space-y-2.5">
+              {topCounties.map(({ county, count }, i) => (
+                <li key={county} className="flex items-center gap-3">
+                  <span className="w-5 text-xs font-bold text-gray-300 text-center">#{i + 1}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-900">{county}</span>
+                      <span className="text-xs text-gray-400">{count}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${(count / maxCounty) * 100}%`, background: '#f97316' }}
+                      />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Issues list */}
       <Card>
@@ -250,9 +338,7 @@ export default function PainPointsPage() {
                           <Badge variant="neutral" className="text-xs">mock</Badge>
                         )}
                       </div>
-                      <p
-                        className={`text-sm text-gray-800 leading-relaxed ${expandedId !== item.id ? 'line-clamp-2' : ''}`}
-                      >
+                      <p className={`text-sm text-gray-800 leading-relaxed ${expandedId !== item.id ? 'line-clamp-2' : ''}`}>
                         {item.description}
                       </p>
                       {item.description.length > 120 && (

@@ -4,7 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
-from shared.auth import CurrentUser
+from shared.auth import CurrentUser, CandidateId
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -28,18 +28,19 @@ async def _proxy_get(path: str, params: dict | None = None) -> dict:
 
 
 @router.get("/summary")
-async def painpoint_summary(user: CurrentUser) -> dict:
-    return await _proxy_get("/painpoints/summary")
+async def painpoint_summary(user: CurrentUser, candidate_id: CandidateId) -> dict:
+    return await _proxy_get("/painpoints/summary", {"candidate_id": candidate_id})
 
 
 @router.get("/by-county")
-async def by_county(user: CurrentUser) -> dict:
-    return await _proxy_get("/painpoints/by-county")
+async def by_county(user: CurrentUser, candidate_id: CandidateId) -> dict:
+    return await _proxy_get("/painpoints/by-county", {"candidate_id": candidate_id})
 
 
 @router.get("/")
 async def list_pain_points(
     user: CurrentUser,
+    candidate_id: CandidateId,
     category: str | None = Query(None),
     county: str | None = Query(None),
     severity: str | None = Query(None),
@@ -47,6 +48,7 @@ async def list_pain_points(
     offset: int = Query(0),
 ) -> dict:
     return await _proxy_get("/painpoints/", {
+        "candidate_id": candidate_id,
         "category": category,
         "county": county,
         "severity": severity,

@@ -13,6 +13,9 @@ class GatewaySettings(BaseSettings):
     email_from_address: str = "noreply@kampeni.net"
     email_from_name: str = "Kampeni"
 
+    anthropic_api_key: str = ""
+    internal_api_base: str = "http://localhost:8000"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

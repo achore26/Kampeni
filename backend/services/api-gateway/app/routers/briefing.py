@@ -4,7 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from shared.auth import CurrentUser
+from shared.auth import CurrentUser, PoliticalDirectorOrAbove, CampaignManagerOrAbove
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -64,6 +64,7 @@ async def get_briefing_history(
 @router.post("/generate")
 async def generate_briefing(
     user: CurrentUser,
+    _: dict = CampaignManagerOrAbove,
     candidate_id: str = Query(...),
 ) -> dict:
     """Trigger on-demand briefing generation for a candidate."""
@@ -73,7 +74,8 @@ async def generate_briefing(
 @router.post("/{briefing_id}/approve")
 async def approve_briefing(
     user: CurrentUser,
-    briefing_id: str,
+    _: dict = PoliticalDirectorOrAbove,
+    briefing_id: str = None,
     candidate_id: str = Query(...),
     request: Request = None,
 ) -> dict:

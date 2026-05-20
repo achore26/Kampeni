@@ -8,8 +8,10 @@ const resources = {
         briefing: 'Morning Briefing',
         sentiment: 'Public Sentiment',
         opponents: 'Opponent Tracker',
+        map: 'County Map',
         fieldReports: 'Field Reports',
         painpoints: 'Pain Points',
+        aiDashboard: 'AI Builder',
       },
       briefing: {
         title: 'Morning Briefing',
@@ -132,8 +134,10 @@ const resources = {
         briefing: 'Habari za Asubuhi',
         sentiment: 'Hisia za Umma',
         opponents: 'Wapinzani',
+        map: 'Ramani ya Kaunti',
         fieldReports: 'Ripoti za Shambani',
         painpoints: 'Matatizo ya Wananchi',
+        aiDashboard: 'Ujenzi wa AI',
       },
       briefing: {
         title: 'Habari za Asubuhi',
