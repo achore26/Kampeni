@@ -37,7 +37,8 @@ async def submit_field_report(
     body = await request.json()
     # Inject scoping fields — the client never needs to send these manually
     body["candidate_id"] = candidate_id
-    body["agent_id"] = body.get("agent_id") or user.get("email") or user.get("sub")
+    # Always override agent_id from the verified JWT — never trust client-supplied value
+    body["agent_id"] = user.get("email") or user.get("sub")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:

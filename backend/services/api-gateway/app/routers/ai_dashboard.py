@@ -128,12 +128,18 @@ Generate the JSON dashboard config now."""
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="AI service timed out")
 
-    content = response.json()["content"][0]["text"].strip()
+    body = response.json()
+    content_blocks = body.get("content") or []
+    if not content_blocks or content_blocks[0].get("type") != "text":
+        logger.error("Unexpected Anthropic response shape: %s", str(body)[:300])
+        raise HTTPException(status_code=500, detail="AI returned unexpected response format — try again")
+
+    content = content_blocks[0]["text"].strip()
 
     # Strip markdown fences if Claude wraps the JSON despite instructions
     if content.startswith("```"):
         lines = content.split("\n")
-        content = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+        content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
     try:
         dashboard = json.loads(content)

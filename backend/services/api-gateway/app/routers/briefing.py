@@ -74,19 +74,18 @@ async def generate_briefing(
 @router.post("/{briefing_id}/approve")
 async def approve_briefing(
     user: CurrentUser,
+    briefing_id: str,
     _: dict = PoliticalDirectorOrAbove,
-    briefing_id: str = None,
     candidate_id: str = Query(...),
     request: Request = None,
 ) -> dict:
     """Political Director approves a briefing before 6am delivery."""
-    body = {}
+    body: dict = {}
     if request:
         try:
             body = await request.json()
         except Exception:
             pass
-    # Inject the approver from the JWT
     body["approved_by"] = user.get("name") or user.get("email") or user.get("sub", "unknown")
     result = await _proxy_post(f"/briefings/{candidate_id}/approve/{briefing_id}", body)
     return result or {}
