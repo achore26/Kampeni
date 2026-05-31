@@ -6,17 +6,13 @@ import { apiClient } from '@/api/client'
 const TARJUMI_BASE = 'https://api.thexi.dev'
 const TARJUMI_KEY = import.meta.env.VITE_TARJUMI_API_KEY as string | undefined
 
-async function callTarjumiDirect(
+async function bundleChunk(
   targetLang: string,
-  strings: Record<string, string>,
+  chunk: Record<string, string>,
 ): Promise<Record<string, string>> {
-  if (!TARJUMI_KEY) throw new Error('VITE_TARJUMI_API_KEY not set')
-
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30_000)
-
+  const timeout = setTimeout(() => controller.abort(), 45_000)
   try {
-    console.log('[Tarjumi] calling /v1/bundle directly, lang=%s, keys=%d', targetLang, Object.keys(strings).length)
     const res = await fetch(`${TARJUMI_BASE}/v1/bundle`, {
       method: 'POST',
       signal: controller.signal,
@@ -24,19 +20,43 @@ async function callTarjumiDirect(
         Authorization: `Bearer ${TARJUMI_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ target_lang: targetLang, strings }),
+      body: JSON.stringify({ target_lang: targetLang, source_lang: 'en', strings: chunk }),
     })
-    console.log('[Tarjumi] response status=%d', res.status)
     if (!res.ok) {
       const body = await res.text()
       throw new Error(`Tarjumi ${res.status}: ${body}`)
     }
     const data = await res.json()
-    console.log('[Tarjumi] received translations, keys=%d', Object.keys(data.translations ?? {}).length)
-    return data.translations as Record<string, string>
+    return (data.translations ?? {}) as Record<string, string>
   } finally {
     clearTimeout(timeout)
   }
+}
+
+async function callTarjumiDirect(
+  targetLang: string,
+  strings: Record<string, string>,
+): Promise<Record<string, string>> {
+  if (!TARJUMI_KEY) throw new Error('VITE_TARJUMI_API_KEY not set')
+
+  // Split into chunks of 50 so each request is fast regardless of language
+  const entries = Object.entries(strings)
+  const CHUNK_SIZE = 50
+  const chunks: Record<string, string>[] = []
+  for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+    chunks.push(Object.fromEntries(entries.slice(i, i + CHUNK_SIZE)))
+  }
+
+  console.log('[Tarjumi] lang=%s, total keys=%d, chunks=%d', targetLang, entries.length, chunks.length)
+
+  const results = await Promise.all(chunks.map((chunk, i) => {
+    console.log('[Tarjumi] chunk %d/%d (%d keys)', i + 1, chunks.length, Object.keys(chunk).length)
+    return bundleChunk(targetLang, chunk)
+  }))
+
+  const merged = Object.assign({}, ...results)
+  console.log('[Tarjumi] done, translated keys=%d', Object.keys(merged).length)
+  return merged
 }
 
 export interface Language {
