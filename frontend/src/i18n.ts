@@ -660,7 +660,7 @@ const swTranslations = {
 }
 
 i18n.use(initReactI18next).init({
-  lng: 'sw',
+  lng: 'en',
   fallbackLng: 'en',
   resources: {
     en: { translation: enTranslations },

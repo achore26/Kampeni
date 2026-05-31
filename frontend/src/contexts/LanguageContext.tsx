@@ -75,7 +75,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType>({
   languages: [],
-  currentLang: 'sw',
+  currentLang: 'en',
   setLanguage: async () => {},
   isLoading: false,
 })
@@ -111,7 +111,7 @@ function cacheKey(lang: string) {
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [languages, setLanguages] = useState<Language[]>(FALLBACK_LANGUAGES)
-  const [currentLang, setCurrentLang] = useState(i18n.language || 'sw')
+  const [currentLang, setCurrentLang] = useState(i18n.language || 'en')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
