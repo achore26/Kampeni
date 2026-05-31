@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-
-const NAV_LINKS = [
-  { to: '/about', label: 'About' },
-  { to: '/features', label: 'Features' },
-  { to: '/media', label: 'Media' },
-  { to: '/contact', label: 'Contact' },
-]
+import { LanguagePicker } from '@/components/LanguagePicker'
 
 export default function MarketingLayout() {
+  const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const NAV_LINKS = [
+    { to: '/about',    label: t('marketing.nav.about') },
+    { to: '/features', label: t('marketing.nav.features') },
+    { to: '/media',    label: t('marketing.nav.media') },
+    { to: '/contact',  label: t('marketing.nav.contact') },
+  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -36,9 +39,10 @@ export default function MarketingLayout() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <LanguagePicker variant="light" />
             <Link to="/login" className="hidden md:inline-flex btn-primary px-5 py-2 rounded text-sm">
-              Launch Platform →
+              {t('marketing.nav.launch')} →
             </Link>
             <button className="md:hidden p-1 text-gray-600" onClick={() => setMobileOpen(v => !v)}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -54,7 +58,7 @@ export default function MarketingLayout() {
             ))}
             <Link to="/login" onClick={() => setMobileOpen(false)}
               className="block mt-3 btn-primary px-5 py-2.5 rounded text-sm text-center">
-              Launch Platform →
+              {t('marketing.nav.launch')} →
             </Link>
           </div>
         )}
@@ -69,12 +73,12 @@ export default function MarketingLayout() {
           <div className="col-span-2 md:col-span-1">
             <img src="/Kampeni_Logo_transparent.png" alt="Kampeni" className="h-10 w-auto brightness-0 invert mb-4" />
             <p className="text-sm leading-relaxed text-gray-400">
-              Kenya's first AI-powered political intelligence platform. Built for the 2027 election.
+              {t('marketing.footer.description')}
             </p>
           </div>
           {[
-            { title: 'Platform', links: [{ label: 'Features', to: '/features' }, { label: 'Dashboard', to: '/dashboard' }] },
-            { title: 'Company', links: [{ label: 'About', to: '/about' }, { label: 'Contact', to: '/contact' }, { label: 'Media', to: '/media' }] },
+            { title: t('marketing.nav.features'), links: [{ label: t('marketing.nav.features'), to: '/features' }, { label: 'Dashboard', to: '/dashboard' }] },
+            { title: 'Company', links: [{ label: t('marketing.nav.about'), to: '/about' }, { label: t('marketing.nav.contact'), to: '/contact' }, { label: t('marketing.nav.media'), to: '/media' }] },
             { title: 'Legal', links: [{ label: 'Privacy', to: '#' }, { label: 'Terms', to: '#' }, { label: 'Security', to: '#' }] },
           ].map(({ title, links }) => (
             <div key={title}>
@@ -88,8 +92,8 @@ export default function MarketingLayout() {
           ))}
         </div>
         <div className="max-w-7xl mx-auto px-6 pb-8 flex items-center justify-between text-xs text-gray-600 border-t border-gray-800 pt-6">
-          <span>© 2026 Kampeni. All rights reserved.</span>
-          <span>Powered by <span className="text-gray-400 font-semibold">CIF AI</span> · Built in Kenya 🇰🇪</span>
+          <span>{t('marketing.footer.rights')}</span>
+          <span>Powered by <span className="text-gray-400 font-semibold">CIF AI</span> · {t('marketing.footer.builtIn')} 🇰🇪</span>
         </div>
       </footer>
     </div>

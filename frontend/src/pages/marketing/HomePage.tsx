@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { ArrowUpRight, CheckCircle2, XCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -16,30 +17,31 @@ const COUNTIES = [
 
 const POLITICAL_LEVELS = ['MCA', 'MP', 'Woman Rep', 'Senator', 'Governor']
 
-const PROBLEMS = [
-  'Campaigns waste millions on guesswork',
-  'Opponents surprise you when it is already too late',
-  'Governance success is left to chance',
-]
-
-const SOLUTIONS = [
-  'Know what voters want, daily',
-  'Outsmart opponents before they act',
-  'Win elections, lead effectively, and win again',
-]
-
-const STATS = [
-  { value: '47+', label: 'Counties covered' },
-  { value: '3', label: 'News sources scraped' },
-  { value: '30min', label: 'Ingestion cadence' },
-  { value: '6 AM', label: 'Daily briefing delivery' },
+const STATS_VALUES = [
+  { value: '47+', key: 'marketing.stats.counties' },
+  { value: '3',   key: 'marketing.stats.newsSources' },
+  { value: '30min', key: 'marketing.stats.cadence' },
+  { value: '6 AM',  key: 'marketing.stats.briefing' },
 ]
 
 export default function HomePage() {
+  const { t } = useTranslation()
   const [earlyAccess, setEarlyAccess] = useState({ email: '', county: '', level: '' })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const PROBLEMS = [
+    t('marketing.problem.item1'),
+    t('marketing.problem.item2'),
+    t('marketing.problem.item3'),
+  ]
+
+  const SOLUTIONS = [
+    t('marketing.solution.item1'),
+    t('marketing.solution.item2'),
+    t('marketing.solution.item3'),
+  ]
 
   async function handleSubmit() {
     if (!earlyAccess.email || !earlyAccess.county || !earlyAccess.level) return
@@ -54,7 +56,7 @@ export default function HomePage() {
       if (!res.ok) throw new Error('Request failed')
       setSubmitted(true)
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('marketing.earlyAccess.error'))
     } finally {
       setLoading(false)
     }
@@ -79,20 +81,20 @@ export default function HomePage() {
         <div className="grid md:grid-cols-2 gap-8 items-end pb-12">
           <div>
             <h1 className="text-hero font-black text-gray-900 leading-none">
-              Stop Guessing.<br />
-              <span className="highlight">Start Winning.</span>
+              {t('marketing.hero.line1')}<br />
+              <span className="highlight">{t('marketing.hero.line2')}</span>
             </h1>
           </div>
 
           <div className="md:pb-2">
             <p className="text-base leading-relaxed text-gray-500 mb-8 max-w-sm">
-              Kenya's first intelligence platform built for political leaders who want to win elections and lead effectively.
+              {t('marketing.hero.subtitle')}
             </p>
             <a
               href="#early-access"
               className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded text-sm"
             >
-              See how Kampeni transforms your campaign <ArrowUpRight className="w-4 h-4" />
+              {t('marketing.hero.cta')} <ArrowUpRight className="w-4 h-4" />
             </a>
           </div>
         </div>
@@ -111,13 +113,13 @@ export default function HomePage() {
       <section className="border-t border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4">
-            {STATS.map(({ value, label }, i) => (
+            {STATS_VALUES.map(({ value, key }, i) => (
               <div
-                key={label}
-                className={`py-12 px-6 ${i < STATS.length - 1 ? 'border-r border-gray-100' : ''}`}
+                key={key}
+                className={`py-12 px-6 ${i < STATS_VALUES.length - 1 ? 'border-r border-gray-100' : ''}`}
               >
                 <p className="text-4xl md:text-5xl font-black text-[#2e6417] mb-2">{value}</p>
-                <p className="text-sm text-gray-400">{label}</p>
+                <p className="text-sm text-gray-400">{t(key)}</p>
               </div>
             ))}
           </div>
@@ -127,9 +129,9 @@ export default function HomePage() {
       {/* ── Problem / Solution ───────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-6 py-24 grid md:grid-cols-2 gap-16 items-start">
         <div>
-          <span className="section-label">/the problem/</span>
+          <span className="section-label">{t('marketing.problem.label')}</span>
           <h2 className="text-display font-black text-gray-900 mt-4 mb-10">
-            The Problem
+            {t('marketing.problem.title')}
           </h2>
           <div className="space-y-0">
             {PROBLEMS.map(p => (
@@ -142,9 +144,9 @@ export default function HomePage() {
         </div>
 
         <div>
-          <span className="section-label">/the solution/</span>
+          <span className="section-label">{t('marketing.solution.label')}</span>
           <h2 className="text-display font-black text-gray-900 mt-4 mb-10">
-            The Solution
+            {t('marketing.solution.title')}
           </h2>
           <div className="space-y-0">
             {SOLUTIONS.map(s => (
@@ -174,18 +176,18 @@ export default function HomePage() {
       <section id="early-access" className="bg-gray-950 py-28">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-4 block">
-            /early access/
+            {t('marketing.earlyAccess.label')}
           </span>
           <h2 className="text-display font-black text-white mb-4">
-            Join Kenya's Political Intelligence Revolution
+            {t('marketing.earlyAccess.title')}
           </h2>
           <p className="text-gray-400 mb-10">
-            Be among the first leaders to access Kampeni and gain a decisive advantage.
+            {t('marketing.earlyAccess.subtitle')}
           </p>
 
           {submitted ? (
             <div className="px-8 py-6 rounded-xl bg-[#1a3310] border border-[#2e6417] text-[#7eba5a] font-medium text-sm">
-              ✓ You're on the list. We'll be in touch before launch.
+              ✓ {t('marketing.earlyAccess.success')}
             </div>
           ) : (
             <>
@@ -194,7 +196,7 @@ export default function HomePage() {
                   type="email"
                   value={earlyAccess.email}
                   onChange={e => setEarlyAccess({ ...earlyAccess, email: e.target.value })}
-                  placeholder="Email address"
+                  placeholder={t('marketing.earlyAccess.emailPlaceholder')}
                   className="px-4 py-3 text-sm rounded bg-gray-800 border border-gray-700 text-white placeholder-gray-500 outline-none focus:border-[#2e6417] transition-colors"
                 />
                 <select
@@ -202,7 +204,7 @@ export default function HomePage() {
                   onChange={e => setEarlyAccess({ ...earlyAccess, county: e.target.value })}
                   className="px-4 py-3 text-sm rounded bg-gray-800 border border-gray-700 text-white outline-none focus:border-[#2e6417] transition-colors"
                 >
-                  <option value="">Select County</option>
+                  <option value="">{t('marketing.earlyAccess.selectCounty')}</option>
                   {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <select
@@ -210,7 +212,7 @@ export default function HomePage() {
                   onChange={e => setEarlyAccess({ ...earlyAccess, level: e.target.value })}
                   className="px-4 py-3 text-sm rounded bg-gray-800 border border-gray-700 text-white outline-none focus:border-[#2e6417] transition-colors"
                 >
-                  <option value="">Political Level</option>
+                  <option value="">{t('marketing.earlyAccess.selectLevel')}</option>
                   {POLITICAL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
@@ -219,12 +221,12 @@ export default function HomePage() {
                 disabled={loading}
                 className="btn-primary w-full md:w-auto px-10 py-3 rounded text-sm mb-4 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? 'Submitting…' : 'Request Early Access'}
+                {loading ? t('marketing.earlyAccess.submitting') : t('marketing.earlyAccess.submit')}
               </button>
               {error && (
                 <p className="text-xs text-red-400 mb-2">{error}</p>
               )}
-              <p className="text-xs text-gray-600">Limited early access available</p>
+              <p className="text-xs text-gray-600">{t('marketing.earlyAccess.limited')}</p>
             </>
           )}
         </div>
@@ -233,18 +235,18 @@ export default function HomePage() {
       {/* ── Bottom CTA ───────────────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-6 py-24 grid md:grid-cols-2 gap-12 items-center">
         <h2 className="text-display font-black text-gray-900">
-          Win with data,<br />not guesswork.
+          {t('marketing.bottomCta.title')}
         </h2>
         <div>
           <p className="text-gray-500 text-base leading-relaxed mb-8">
-            Join the campaigns already signing up for early access to Kenya's most advanced political intelligence platform.
+            {t('marketing.bottomCta.subtitle')}
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link to="/contact" className="btn-primary px-7 py-3.5 rounded text-sm">
-              Request Early Access
+              {t('marketing.bottomCta.requestAccess')}
             </Link>
             <Link to="/features" className="px-7 py-3.5 rounded text-sm border border-gray-200 text-gray-700 hover:border-gray-400 hover:text-gray-900 transition-colors">
-              Explore Features →
+              {t('marketing.bottomCta.exploreFeatures')} →
             </Link>
           </div>
         </div>

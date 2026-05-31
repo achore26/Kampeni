@@ -1,19 +1,12 @@
 import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { MapPin, Phone, Mail } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const POLITICAL_LEVELS = ['MCA', 'Woman Rep', 'MP', 'Senator', 'Governor']
 
-const HOW_HEARD = [
-  'Social media',
-  'Referred by a colleague',
-  'News / press coverage',
-  'Google / web search',
-  'Event or conference',
-  'Other',
-]
-
 export default function ContactPage() {
+  const { t } = useTranslation()
   const [earlyAccess, setEarlyAccess] = useState({
     name: '', email: '', phone: '', level: '', location: '', howHeard: '',
   })
@@ -22,6 +15,15 @@ export default function ContactPage() {
   })
   const [eaSubmitted, setEaSubmitted] = useState(false)
   const [pSubmitted, setPSubmitted] = useState(false)
+
+  const HOW_HEARD = [
+    { key: 'social',    label: t('marketing.contact.howHeardOptions.social') },
+    { key: 'referred',  label: t('marketing.contact.howHeardOptions.referred') },
+    { key: 'news',      label: t('marketing.contact.howHeardOptions.news') },
+    { key: 'google',    label: t('marketing.contact.howHeardOptions.google') },
+    { key: 'event',     label: t('marketing.contact.howHeardOptions.event') },
+    { key: 'other',     label: t('marketing.contact.howHeardOptions.other') },
+  ]
 
   function submitEarlyAccess() {
     if (!earlyAccess.name || !earlyAccess.email) return
@@ -49,6 +51,9 @@ export default function ContactPage() {
     setPSubmitted(true)
   }
 
+  const inputCls = 'w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all'
+  const selectCls = 'w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] bg-white'
+
   return (
     <>
       <Helmet>
@@ -61,106 +66,81 @@ export default function ContactPage() {
         <meta name="robots" content="noindex, follow" />
       </Helmet>
 
-      {/* ── Header ───────────────────────────────────────────────────── */}
+      {/* ── Header ── */}
       <section className="max-w-4xl mx-auto px-6 py-32 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">Contact</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#2e6417] mb-6">
+          {t('marketing.contact.headerLabel')}
+        </p>
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
-          Ready for data-driven politics?
+          {t('marketing.contact.headerTitle')}
         </h1>
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-24 space-y-14">
 
-        {/* ── Early Access Form ───────────────────────────────────────── */}
+        {/* ── Early Access Form ── */}
         <div className="grid md:grid-cols-5 gap-10 items-start">
           <div className="md:col-span-2">
-            <span className="section-label">/get early access/</span>
-            <h2 className="text-xl font-bold text-gray-900 mt-4 mb-3">Get Early Access</h2>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Be among the first political leaders in Kenya to access the Kampeni platform. Limited spots available.
-            </p>
+            <span className="section-label">{t('marketing.contact.eaLabel')}</span>
+            <h2 className="text-xl font-bold text-gray-900 mt-4 mb-3">{t('marketing.contact.eaTitle')}</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">{t('marketing.contact.eaDesc')}</p>
           </div>
 
           <div className="md:col-span-3">
             {eaSubmitted ? (
               <div className="p-10 rounded-2xl bg-green-50 border border-green-100 text-center">
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 text-xl">✓</div>
-                <h3 className="font-bold text-gray-900 mb-2">Application received</h3>
+                <h3 className="font-bold text-gray-900 mb-2">{t('marketing.contact.eaSuccess')}</h3>
                 <p className="text-sm text-gray-500">
-                  We'll reach out to <strong className="text-gray-900">{earlyAccess.email}</strong> shortly.
+                  {t('marketing.contact.eaSuccessDesc')}
                 </p>
               </div>
             ) : (
               <div className="p-8 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Full Name</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                      value={earlyAccess.name}
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.fullName')}</label>
+                    <input type="text" className={inputCls} value={earlyAccess.name}
                       onChange={e => setEarlyAccess({ ...earlyAccess, name: e.target.value })}
-                      placeholder="Your full name"
-                    />
+                      placeholder={t('marketing.contact.fields.namePlaceholder')} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
-                    <input
-                      type="email"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                      value={earlyAccess.email}
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.email')}</label>
+                    <input type="email" className={inputCls} value={earlyAccess.email}
                       onChange={e => setEarlyAccess({ ...earlyAccess, email: e.target.value })}
-                      placeholder="your@email.com"
-                    />
+                      placeholder={t('marketing.contact.fields.emailPlaceholder')} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Phone</label>
-                  <input
-                    type="tel"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                    value={earlyAccess.phone}
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.phone')}</label>
+                  <input type="tel" className={inputCls} value={earlyAccess.phone}
                     onChange={e => setEarlyAccess({ ...earlyAccess, phone: e.target.value })}
-                    placeholder="+254 7XX XXX XXX"
-                  />
+                    placeholder={t('marketing.contact.fields.phonePlaceholder')} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Political Level</label>
-                  <select
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] bg-white"
-                    value={earlyAccess.level}
-                    onChange={e => setEarlyAccess({ ...earlyAccess, level: e.target.value })}
-                  >
-                    <option value="">Select level</option>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.level')}</label>
+                  <select className={selectCls} value={earlyAccess.level}
+                    onChange={e => setEarlyAccess({ ...earlyAccess, level: e.target.value })}>
+                    <option value="">{t('marketing.contact.fields.selectLevel')}</option>
                     {POLITICAL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">County or Constituency</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                    value={earlyAccess.location}
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.location')}</label>
+                  <input type="text" className={inputCls} value={earlyAccess.location}
                     onChange={e => setEarlyAccess({ ...earlyAccess, location: e.target.value })}
-                    placeholder="e.g. Westlands, Nairobi County"
-                  />
+                    placeholder={t('marketing.contact.fields.locationPlaceholder')} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">How did you hear about Kampeni?</label>
-                  <select
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] bg-white"
-                    value={earlyAccess.howHeard}
-                    onChange={e => setEarlyAccess({ ...earlyAccess, howHeard: e.target.value })}
-                  >
-                    <option value="">Select an option</option>
-                    {HOW_HEARD.map(h => <option key={h} value={h}>{h}</option>)}
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.howHeard')}</label>
+                  <select className={selectCls} value={earlyAccess.howHeard}
+                    onChange={e => setEarlyAccess({ ...earlyAccess, howHeard: e.target.value })}>
+                    <option value="">{t('marketing.contact.fields.selectOption')}</option>
+                    {HOW_HEARD.map(({ key, label }) => <option key={key} value={label}>{label}</option>)}
                   </select>
                 </div>
-                <button
-                  onClick={submitEarlyAccess}
-                  className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm"
-                >
-                  Request Early Access
+                <button onClick={submitEarlyAccess} className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm">
+                  {t('marketing.contact.submit')}
                 </button>
               </div>
             )}
@@ -169,74 +149,54 @@ export default function ContactPage() {
 
         <div className="border-t border-gray-100" />
 
-        {/* ── Partnership Inquiries ────────────────────────────────────── */}
+        {/* ── Partnership Inquiries ── */}
         <div className="grid md:grid-cols-5 gap-10 items-start">
           <div className="md:col-span-2">
-            <span className="section-label">/partnerships/</span>
-            <h2 className="text-xl font-bold text-gray-900 mt-4 mb-3">Partnership Inquiries</h2>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              NGOs, polling firms, media houses — let's explore what we can build together.
-            </p>
+            <span className="section-label">{t('marketing.contact.partnerLabel')}</span>
+            <h2 className="text-xl font-bold text-gray-900 mt-4 mb-3">{t('marketing.contact.partnerTitle')}</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">{t('marketing.contact.partnerDesc')}</p>
           </div>
 
           <div className="md:col-span-3">
             {pSubmitted ? (
               <div className="p-10 rounded-2xl bg-green-50 border border-green-100 text-center">
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 text-xl">✓</div>
-                <h3 className="font-bold text-gray-900 mb-2">Inquiry received</h3>
+                <h3 className="font-bold text-gray-900 mb-2">{t('marketing.contact.partnerSuccess')}</h3>
                 <p className="text-sm text-gray-500">
-                  We'll reach out to <strong className="text-gray-900">{partnership.email}</strong> shortly.
+                  {t('marketing.contact.eaSuccessDesc')}
                 </p>
               </div>
             ) : (
               <div className="p-8 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Name</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                      value={partnership.name}
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.name')}</label>
+                    <input type="text" className={inputCls} value={partnership.name}
                       onChange={e => setPartnership({ ...partnership, name: e.target.value })}
-                      placeholder="Your name"
-                    />
+                      placeholder={t('marketing.contact.fields.yourName')} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Organization</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                      value={partnership.org}
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.org')}</label>
+                    <input type="text" className={inputCls} value={partnership.org}
                       onChange={e => setPartnership({ ...partnership, org: e.target.value })}
-                      placeholder="Organization name"
-                    />
+                      placeholder={t('marketing.contact.fields.orgPlaceholder')} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all"
-                    value={partnership.email}
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.email')}</label>
+                  <input type="email" className={inputCls} value={partnership.email}
                     onChange={e => setPartnership({ ...partnership, email: e.target.value })}
-                    placeholder="your@organization.com"
-                  />
+                    placeholder={t('marketing.contact.fields.emailPlaceholder')} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Details</label>
-                  <textarea
-                    rows={4}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all resize-none"
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('marketing.contact.fields.details')}</label>
+                  <textarea rows={4} className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 outline-none focus:border-[#2e6417] focus:ring-2 focus:ring-[#ddeece] transition-all resize-none"
                     value={partnership.details}
                     onChange={e => setPartnership({ ...partnership, details: e.target.value })}
-                    placeholder="Tell us about the partnership opportunity..."
-                  />
+                    placeholder={t('marketing.contact.fields.detailsPlaceholder')} />
                 </div>
-                <button
-                  onClick={submitPartnership}
-                  className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm"
-                >
-                  Send Inquiry
+                <button onClick={submitPartnership} className="btn-primary w-full py-3.5 rounded-lg font-semibold text-sm">
+                  {t('marketing.contact.sendInquiry')}
                 </button>
               </div>
             )}
@@ -245,11 +205,11 @@ export default function ContactPage() {
 
         <div className="border-t border-gray-100" />
 
-        {/* ── Office ──────────────────────────────────────────────────── */}
+        {/* ── Office ── */}
         <div className="grid md:grid-cols-5 gap-10 items-start">
           <div className="md:col-span-2">
-            <span className="section-label">/office/</span>
-            <h2 className="text-xl font-bold text-gray-900 mt-4">Office</h2>
+            <span className="section-label">{t('marketing.contact.officeLabel')}</span>
+            <h2 className="text-xl font-bold text-gray-900 mt-4">{t('marketing.contact.officeTitle')}</h2>
           </div>
           <div className="md:col-span-3">
             <div className="p-8 rounded-2xl bg-white border border-gray-200 space-y-4">
@@ -265,9 +225,7 @@ export default function ContactPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                  <a href="mailto:info@kampeni.net" className="hover:text-gray-900 transition-colors">
-                    info@kampeni.net
-                  </a>
+                  <a href="mailto:info@kampeni.net" className="hover:text-gray-900 transition-colors">info@kampeni.net</a>
                 </div>
               </div>
             </div>
@@ -275,10 +233,10 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* ── Footer tagline ───────────────────────────────────────────── */}
+      {/* ── Footer tagline ── */}
       <section className="bg-gray-950 py-16 text-center">
         <p className="text-white font-bold text-xl md:text-2xl">
-          The next election cycle starts now. Stay ahead.
+          {t('marketing.contact.footerTagline')}
         </p>
       </section>
     </>

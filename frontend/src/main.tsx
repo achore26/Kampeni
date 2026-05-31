@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import AuthTokenSync from './components/AuthTokenSync'
+import { LanguageProvider } from './contexts/LanguageContext'
 import './index.css'
 import './i18n'
 
@@ -52,7 +53,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Auth0ProviderWithNavigate>
           <QueryClientProvider client={queryClient}>
             <AuthTokenSync />
-            <App />
+            <LanguageProvider>
+              <App />
+            </LanguageProvider>
           </QueryClientProvider>
         </Auth0ProviderWithNavigate>
       </BrowserRouter>

@@ -15,6 +15,7 @@ class GatewaySettings(BaseSettings):
 
     anthropic_api_key: str = ""
     internal_api_base: str = "http://localhost:8000"
+    tarjumi_api_key: str = ""
 
     class Config:
         env_file = ".env"

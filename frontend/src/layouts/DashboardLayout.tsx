@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BarChart2, Users, Newspaper, ClipboardList, AlertTriangle, LogOut, Globe, Menu, X, Map, Sparkles } from 'lucide-react'
+import { BarChart2, Users, Newspaper, ClipboardList, AlertTriangle, LogOut, Menu, X, Map, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth0 } from '@auth0/auth0-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { LanguagePicker } from '@/components/LanguagePicker'
 
 const NAV_ITEMS = [
   { to: '/dashboard', labelKey: 'nav.briefing', icon: Newspaper, end: true },
@@ -21,9 +22,8 @@ const SIDEBAR_BG = '#0d1b2a'
 const SIDEBAR_ACTIVE = '#1d4ed8'
 
 function SidebarNav({ onNav }: { onNav?: () => void }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user, logout } = useAuth0()
-  const isEn = i18n.language === 'en'
 
   const initials = user?.name
     ? user.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
@@ -85,18 +85,9 @@ function SidebarNav({ onNav }: { onNav?: () => void }) {
         </ul>
       </nav>
 
-      {/* ── Language toggle ── */}
+      {/* ── Language picker ── */}
       <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <button
-          onClick={() => i18n.changeLanguage(isEn ? 'sw' : 'en')}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-white/10"
-          style={{ color: 'rgba(255,255,255,0.5)' }}
-        >
-          <Globe className="w-3.5 h-3.5" />
-          <span style={{ color: isEn ? 'rgba(255,255,255,0.35)' : 'white' }}>SW</span>
-          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-          <span style={{ color: !isEn ? 'rgba(255,255,255,0.35)' : 'white' }}>EN</span>
-        </button>
+        <LanguagePicker variant="dark" />
       </div>
 
       {/* ── User + logout ── */}
@@ -127,10 +118,9 @@ function SidebarNav({ onNav }: { onNav?: () => void }) {
 }
 
 export default function DashboardLayout() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user } = useAuth0()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const isEn = i18n.language === 'en'
 
   const initials = user?.name
     ? user.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
@@ -196,15 +186,7 @@ export default function DashboardLayout() {
             <img src="/kampeni-logo.png" alt="Kampeni" className="h-6 md:hidden object-contain" />
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => i18n.changeLanguage(isEn ? 'sw' : 'en')}
-              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all"
-            >
-              <Globe className="w-3.5 h-3.5 text-gray-400" />
-              <span className={isEn ? 'text-gray-400' : 'text-gray-700'}>SW</span>
-              <span className="text-gray-200">|</span>
-              <span className={!isEn ? 'text-gray-400' : 'text-gray-700'}>EN</span>
-            </button>
+            <LanguagePicker variant="light" />
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
               style={{ background: '#0d1b2a' }}>
               {initials}

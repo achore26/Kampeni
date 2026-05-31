@@ -71,6 +71,7 @@ RESEND_API_KEY=re_fB744UEF_5TzF5SUGemGZNyExbzk7noK6
 EMAIL_FROM_ADDRESS=noreply@kampeni.net
 EMAIL_FROM_NAME=Kampeni
 ANTHROPIC_API_KEY=<your key from console.anthropic.com>
+TARJUMI_API_KEY=<your key from api.thexi.dev>
 INTERNAL_API_BASE=https://<api-gateway-url>.railway.app
 SENTIMENT_SERVICE_URL=https://<sentiment-url>.railway.app
 PAINPOINT_SERVICE_URL=https://<painpoint-url>.railway.app
