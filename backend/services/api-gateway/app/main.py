@@ -6,7 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints, waitlist, ai_dashboard, translate
 
 _app_env = os.getenv("APP_ENV", "development")
-_cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+# CORS_ORIGIN supports comma-separated list, e.g. "https://kampeni.net,http://localhost:3000"
+_cors_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGIN", "http://localhost:3000").split(",")
+    if o.strip()
+]
 
 app = FastAPI(
     title="Kampeni API Gateway",
@@ -17,7 +22,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[_cors_origin],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

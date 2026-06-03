@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import httpx
@@ -42,6 +44,9 @@ def get_languages():
     return {"languages": LANGUAGES}
 
 
+_CHUNK_SIZE = 50
+
+
 @router.post("/bundle")
 async def translate_bundle(req: BundleRequest, _user: dict = Depends(CurrentUser)):
     if not _TARJUMI_KEY:
@@ -51,11 +56,22 @@ async def translate_bundle(req: BundleRequest, _user: dict = Depends(CurrentUser
     if req.target_lang not in valid_codes:
         raise HTTPException(400, detail=f"Unsupported language: {req.target_lang}")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    items = list(req.strings.items())
+    chunks = [dict(items[i:i + _CHUNK_SIZE]) for i in range(0, len(items), _CHUNK_SIZE)]
+
+    async def translate_chunk(client: httpx.AsyncClient, chunk: dict) -> dict:
         r = await client.post(
             f"{_TARJUMI_BASE}/v1/bundle",
-            json={"target_lang": req.target_lang, "strings": req.strings},
+            json={"target_lang": req.target_lang, "source_lang": "en", "strings": chunk},
             headers={"Authorization": f"Bearer {_TARJUMI_KEY}", "Content-Type": "application/json"},
         )
         r.raise_for_status()
-        return r.json()
+        return r.json().get("translations", {})
+
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        results = await asyncio.gather(*[translate_chunk(client, chunk) for chunk in chunks])
+
+    merged: dict = {}
+    for result in results:
+        merged.update(result)
+    return {"translations": merged}
