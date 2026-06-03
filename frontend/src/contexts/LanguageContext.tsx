@@ -20,7 +20,7 @@ async function bundleChunk(
         Authorization: `Bearer ${TARJUMI_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ target_lang: targetLang, source_lang: 'en', strings: chunk }),
+      body: JSON.stringify({ target_lang: targetLang, strings: chunk }),
     })
     if (!res.ok) {
       const body = await res.text()
@@ -49,12 +49,15 @@ async function callTarjumiDirect(
 
   console.log('[Tarjumi] lang=%s, total keys=%d, chunks=%d', targetLang, entries.length, chunks.length)
 
-  const results = await Promise.all(chunks.map((chunk, i) => {
-    console.log('[Tarjumi] chunk %d/%d (%d keys)', i + 1, chunks.length, Object.keys(chunk).length)
-    return bundleChunk(targetLang, chunk)
-  }))
+  // Process 2 chunks at a time — firing all in parallel risks rate limiting
+  const merged: Record<string, string> = {}
+  for (let i = 0; i < chunks.length; i += 2) {
+    const batch = chunks.slice(i, i + 2)
+    console.log('[Tarjumi] chunks %d-%d/%d', i + 1, Math.min(i + 2, chunks.length), chunks.length)
+    const results = await Promise.all(batch.map(chunk => bundleChunk(targetLang, chunk)))
+    Object.assign(merged, ...results)
+  }
 
-  const merged = Object.assign({}, ...results)
   console.log('[Tarjumi] done, translated keys=%d', Object.keys(merged).length)
   return merged
 }
@@ -144,21 +147,32 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Fetch translations — try api-gateway first, fall back to direct Tarjumi call
+    // Fetch translations — try pre-built static file first, then api-gateway, then direct Tarjumi
     setIsLoading(true)
     try {
-      let translations: Record<string, string>
-
+      // 1. Try static pre-built file (instant, no API cost)
       try {
-        console.log('[LanguageContext] trying backend /translate/bundle for lang=%s', code)
+        const staticRes = await fetch(`/locales/${code}/translation.json`)
+        if (staticRes.ok) {
+          const nested = await staticRes.json()
+          localStorage.setItem(cacheKey(code), JSON.stringify(nested))
+          i18n.addResourceBundle(code, 'translation', nested, true, true)
+          await i18n.changeLanguage(code)
+          setCurrentLang(code)
+          return
+        }
+      } catch { /* fall through to API */ }
+
+      // 2. Try api-gateway proxy, then direct Tarjumi
+      let translations: Record<string, string>
+      try {
         const res = await apiClient.post<{ translations: Record<string, string> }>(
           '/translate/bundle',
           { target_lang: code, strings: flatEn },
+          { timeout: 90_000 },
         )
         translations = res.data.translations
-        console.log('[LanguageContext] backend succeeded')
-      } catch (backendErr) {
-        console.warn('[LanguageContext] backend failed, falling back to direct Tarjumi:', backendErr)
+      } catch {
         translations = await callTarjumiDirect(code, flatEn)
       }
 
