@@ -13,8 +13,8 @@ class BriefingSettings(BaseSettings):
     postgres_user: str = "kampeni"
     postgres_password: str = "kampeni_dev"
 
-    # OpenAI GPT-4o — briefing generation
-    openai_api_key: str = ""
+    # Gemini — briefing generation
+    anthropic_api_key: str = ""  # env var name kept for backwards compat, holds GEMINI_API_KEY value
 
     # Africa's Talking — SMS delivery
     at_api_key: str = ""

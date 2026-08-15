@@ -1,4 +1,4 @@
-"""Daily AI briefing generator — GPT-4o powered.
+"""Daily AI briefing generator — Claude powered.
 
 Data flow:
   1. Query Postgres for overnight (last 24h) data:
@@ -6,7 +6,7 @@ Data flow:
        - Opponent mentions
        - Top pain points
   2. Build structured context JSON
-  3. Call GPT-4o with a tightly-scoped prompt
+  3. Call Claude with a tightly-scoped prompt
   4. Parse 5-section response
   5. Return BriefingResult
 
@@ -15,7 +15,7 @@ Delivery (handled by tasks.py):
   - SMS fallback via Africa's Talking
   - Political Director must approve before delivery (is_approved gate)
 
-If OPENAI_API_KEY is not set, returns a clearly-labelled placeholder briefing
+If ANTHROPIC_API_KEY is not set, returns a data-populated placeholder briefing
 so the pipeline doesn't break during development.
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import create_engine, func, select, text
+from sqlalchemy import case, create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from shared.models import Article, Briefing, OpponentMention, OpponentProfile, PainPoint, SentimentRecord
@@ -90,16 +90,16 @@ class BriefingGenerator:
         self._Session = sessionmaker(bind=engine)
 
     def generate(self, candidate_id: str, language: str = "sw") -> BriefingResult:
-        """Generate a briefing for one candidate. Uses GPT-4o or mock fallback."""
+        """Generate a briefing for one candidate. Uses Claude or data-populated fallback."""
         context = self._build_context(candidate_id)
         briefing_date = datetime.now(timezone.utc).date()
 
-        if not self._settings.openai_api_key:
-            logger.warning("OPENAI_API_KEY not set — returning mock briefing")
+        if not self._settings.anthropic_api_key:
+            logger.warning("ANTHROPIC_API_KEY not set — returning data-populated briefing")
             return self._mock_briefing(candidate_id, briefing_date, language, context)
 
         try:
-            sections = self._call_gpt4o(context, language)
+            sections = self._call_claude(context, language)
             return BriefingResult(
                 candidate_id=candidate_id,
                 briefing_date=briefing_date,
@@ -109,21 +109,32 @@ class BriefingGenerator:
                 used_mock=False,
             )
         except Exception as exc:
-            logger.error("GPT-4o briefing generation failed: %s — falling back to mock", exc)
+            logger.error("Claude briefing generation failed: %s — falling back to data briefing", exc)
             return self._mock_briefing(candidate_id, briefing_date, language, context)
 
     def _build_context(self, candidate_id: str) -> dict:
-        """Query Postgres for overnight data and return a structured context dict."""
-        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        """Query Postgres for recent data and return a structured context dict."""
+        since = datetime.now(timezone.utc) - timedelta(days=7)
 
         with self._Session() as db:
             # ── Sentiment summary ─────────────────────────────────────────────
             sentiment_rows = (
                 db.query(SentimentRecord.label, func.count(SentimentRecord.id))
-                .filter(SentimentRecord.created_at >= since)
+                .filter(
+                    SentimentRecord.candidate_id == candidate_id,
+                    SentimentRecord.created_at >= since,
+                )
                 .group_by(SentimentRecord.label)
                 .all()
             )
+            # Fall back to all-time if last 7 days is empty (e.g. fresh data)
+            if not sentiment_rows:
+                sentiment_rows = (
+                    db.query(SentimentRecord.label, func.count(SentimentRecord.id))
+                    .filter(SentimentRecord.candidate_id == candidate_id)
+                    .group_by(SentimentRecord.label)
+                    .all()
+                )
             sentiment = {row[0]: row[1] for row in sentiment_rows}
             total = sum(sentiment.values())
 
@@ -131,7 +142,7 @@ class BriefingGenerator:
             top_articles_q = (
                 db.query(Article.title, Article.source, Article.url, SentimentRecord.label, SentimentRecord.score)
                 .join(SentimentRecord, SentimentRecord.article_id == Article.id)
-                .filter(SentimentRecord.created_at >= since)
+                .filter(SentimentRecord.candidate_id == candidate_id)
                 .order_by(func.abs(SentimentRecord.score).desc())
                 .limit(5)
                 .all()
@@ -190,7 +201,7 @@ class BriefingGenerator:
                 )
                 .filter(PainPoint.created_at >= since)
                 .order_by(
-                    func.case(
+                    case(
                         (PainPoint.severity == "high", 0),
                         (PainPoint.severity == "medium", 1),
                         else_=2
@@ -222,9 +233,8 @@ class BriefingGenerator:
             "painpoints": painpoints,
         }
 
-    def _call_gpt4o(self, context: dict, language: str) -> list[dict]:
-        from openai import OpenAI
-        client = OpenAI(api_key=self._settings.openai_api_key)
+    def _call_claude(self, context: dict, language: str) -> list[dict]:
+        import httpx
 
         sections = SECTIONS_SW if language == "sw" else SECTIONS_EN
         lang_label = "Kiswahili" if language == "sw" else "English"
@@ -236,19 +246,27 @@ class BriefingGenerator:
         )
         user_msg = f"Here is today's intelligence data:\n\n{json.dumps(context, ensure_ascii=False, indent=2)}"
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.3,
-            max_tokens=1500,
-            response_format={"type": "json_object"},
+        response = httpx.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self._settings.anthropic_api_key}",
+            headers={"content-type": "application/json"},
+            json={
+                "system_instruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": user_msg}]}],
+                "generationConfig": {
+                    "maxOutputTokens": 1500,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=30.0,
         )
+        response.raise_for_status()
 
-        raw = response.choices[0].message.content or "{}"
-        data = json.loads(raw)
+        content = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        if content.startswith("```"):
+            lines = content.split("\n")
+            content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        data = json.loads(content)
         return data.get("sections", [])
 
     def _mock_briefing(
@@ -273,21 +291,32 @@ class BriefingGenerator:
             },
             {
                 "title": "Hisia za Wananchi" if language == "sw" else "Public Sentiment",
-                "content": "[Inazalishwa na AI — OPENAI_API_KEY haijakonfigurwa]"
-                if language == "sw"
-                else "[AI generation pending — OPENAI_API_KEY not configured]",
+                "content": (
+                    f"Chanya: {s.get('positive', 0)} ({s.get('positive_pct', 0)}%), "
+                    f"Hasi: {s.get('negative', 0)} ({s.get('negative_pct', 0)}%), "
+                    f"Wastani: {s.get('neutral', 0)}."
+                    if language == "sw"
+                    else f"Positive: {s.get('positive', 0)} ({s.get('positive_pct', 0)}%), "
+                    f"Negative: {s.get('negative', 0)} ({s.get('negative_pct', 0)}%), "
+                    f"Neutral: {s.get('neutral', 0)}. "
+                    f"Add ANTHROPIC_API_KEY for AI narrative analysis."
+                ),
             },
             {
                 "title": "Shughuli za Washindani" if language == "sw" else "Opponent Activity",
-                "content": f"{len(context.get('opponents', []))} washindani wanafuatiliwa."
-                if language == "sw"
-                else f"{len(context.get('opponents', []))} opponents monitored.",
+                "content": (
+                    f"{len(context.get('opponents', []))} washindani wanafuatiliwa. "
+                    + (f"Anayeongoza: {context['opponents'][0]['name']} — matukio {context['opponents'][0]['mentions_24h']} masaa 24." if context.get('opponents') else "Hakuna data.")
+                    if language == "sw"
+                    else f"{len(context.get('opponents', []))} opponents monitored. "
+                    + (f"Top: {context['opponents'][0]['name']} — {context['opponents'][0]['mentions_24h']} mentions in 24h." if context.get('opponents') else "No opponents configured yet.")
+                ),
             },
             {
                 "title": "Vitendo 3 vya Leo" if language == "sw" else "Today's 3 Actions",
-                "content": "[Hii sehemu itajazwa na GPT-4o]"
+                "content": "Ongeza ANTHROPIC_API_KEY kupata mapendekezo ya vitendo vya AI."
                 if language == "sw"
-                else "[This section requires GPT-4o — add OPENAI_API_KEY to .env]",
+                else "Add ANTHROPIC_API_KEY to .env for AI-generated action recommendations.",
             },
             {
                 "title": "Mwelekeo wa Kata" if language == "sw" else "Ward Focus",

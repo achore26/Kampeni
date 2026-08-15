@@ -1,0 +1,116 @@
+name: Build & Deploy to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options: [production]
+
+env:
+  AWS_REGION: us-east-1
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # ── Build all images in parallel and push to ECR ───────────────────────────
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - service: api-gateway
+            dockerfile: backend/services/api-gateway/Dockerfile
+          - service: sentiment
+            dockerfile: backend/services/sentiment/Dockerfile
+          - service: opponent
+            dockerfile: backend/services/opponent/Dockerfile
+          - service: briefing
+            dockerfile: backend/services/briefing/Dockerfile
+          - service: ingestion
+            dockerfile: backend/services/ingestion/Dockerfile
+          - service: translation
+            dockerfile: backend/services/translation/Dockerfile
+          - service: painpoint
+            dockerfile: backend/services/painpoint/Dockerfile
+          - service: prefect-worker
+            dockerfile: flows/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ secrets.ECR_REGISTRY }}/kampeni-production/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+            ${{ secrets.ECR_REGISTRY }}/kampeni-production/${{ matrix.service }}:latest
+          # Reuse layer cache from the last push to speed up builds
+          cache-from: type=registry,ref=${{ secrets.ECR_REGISTRY }}/kampeni-production/${{ matrix.service }}:latest
+          cache-to: type=inline
+
+  # ── Deploy: SSH into EC2, pull new images, restart services ────────────────
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build   # only runs after all builds pass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml,nginx.conf"
+          target: "/opt/kampeni"
+
+      - name: Pull images and restart services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/kampeni
+
+            # Refresh ECR auth token (valid 12h but refresh to be safe)
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+            # Write the image tag so compose picks it up
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=${{ env.IMAGE_TAG }}/" .env || \
+              echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" >> .env
+
+            # Pull new images then restart only changed containers (zero-downtime for others)
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Run any pending migrations
+            docker compose -f docker-compose.prod.yml run --rm \
+              api-gateway python -m alembic upgrade head
+
+            # Clean up old images to save disk space
+            docker image prune -f
+
+            echo "Deployment complete — $(date)"
