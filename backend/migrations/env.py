@@ -19,8 +19,20 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _get_url() -> str:
+    # Prefer env vars so the correct host is used inside Docker
+    host = os.environ.get("POSTGRES_HOST", "localhost")
+    port = os.environ.get("POSTGRES_PORT", "5432")
+    user = os.environ.get("POSTGRES_USER", "kampeni")
+    password = os.environ.get("POSTGRES_PASSWORD", "kampeni_dev")
+    db = os.environ.get("POSTGRES_DB", "kampeni")
+    if any(os.environ.get(k) for k in ("POSTGRES_HOST", "POSTGRES_USER", "POSTGRES_PASSWORD")):
+        return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
+    return config.get_main_option("sqlalchemy.url")
+
+
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+    url = _get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -33,7 +45,7 @@ def run_migrations_offline() -> None:
 
 async def run_migrations_online() -> None:
     connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),  # type: ignore[arg-type]
+        _get_url(),
     )
     async with connectable.connect() as connection:
         await connection.run_sync(
