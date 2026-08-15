@@ -2,9 +2,9 @@ FROM prefecthq/prefect:3-latest
 
 WORKDIR /flows
 
-COPY requirements.txt .
+COPY flows/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY flows/ .
 
 CMD ["python", "serve.py"]
