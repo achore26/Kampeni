@@ -122,12 +122,38 @@ export const DEMO_BRIEFING = {
   ],
 }
 
+function sourceParam(url: string): string | null {
+  return new URLSearchParams(url.split('?')[1] ?? '').get('source')
+}
+
+function summaryFromArticles(articles: typeof DEMO_ARTICLES) {
+  const positive = articles.filter(a => a.label === 'positive').length
+  const negative = articles.filter(a => a.label === 'negative').length
+  const neutral  = articles.filter(a => a.label === 'neutral').length
+  return { positive, negative, neutral, total: articles.length }
+}
+
 export function getDemoResponse(url: string, _method: string): unknown | null {
   const u = url.toLowerCase()
 
-  if (u.includes('/sentiment/summary'))           return DEMO_SENTIMENT_SUMMARY
-  if (u.includes('/sentiment/trend'))             return DEMO_SENTIMENT_TREND
-  if (u.includes('/sentiment/articles'))          return DEMO_ARTICLES
+  if (u.includes('/sentiment/trend'))   return DEMO_SENTIMENT_TREND
+
+  if (u.includes('/sentiment/summary')) {
+    const src = sourceParam(url)
+    if (src && src !== 'all') {
+      return summaryFromArticles(DEMO_ARTICLES.filter(a => a.source === src))
+    }
+    return DEMO_SENTIMENT_SUMMARY
+  }
+
+  if (u.includes('/sentiment/articles')) {
+    const src = sourceParam(url)
+    if (src && src !== 'all') {
+      return DEMO_ARTICLES.filter(a => a.source === src)
+    }
+    return DEMO_ARTICLES
+  }
+
   if (u.includes('/briefings/latest'))            return DEMO_BRIEFING
   if (u.includes('/briefings/generate'))          return DEMO_BRIEFING
   if (u.includes('/opponents/') && u.includes('/mentions')) {
