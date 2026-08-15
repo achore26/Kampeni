@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Loader2, Mail, Lock, ArrowLeft, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Loader2, Mail, Lock, ArrowLeft, TrendingUp, TrendingDown, Minus, BarChart2, ArrowRight } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
@@ -110,6 +110,19 @@ export default function LoginPage() {
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
           <SakajaPreviewChart />
+
+          {/* Demo CTA */}
+          <div className="w-full flex flex-col items-center gap-2">
+            <button
+              onClick={() => navigate('/demo')}
+              className="group flex items-center gap-2.5 bg-[#0d1b2a] hover:bg-[#1d4ed8] text-white font-semibold text-sm px-6 py-3 rounded-full transition-all duration-200 shadow-md hover:shadow-lg w-full max-w-xs justify-center"
+            >
+              <BarChart2 className="w-4 h-4 shrink-0" />
+              Explore Live Dashboard
+              <ArrowRight className="w-4 h-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+            <p className="text-[10px] text-gray-400">Sentiment · Map · AI Briefings · No login required</p>
+          </div>
         </div>
       </div>
 

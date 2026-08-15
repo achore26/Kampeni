@@ -19,6 +19,9 @@ import MapPage from './pages/MapPage'
 import AIDashboardPage from './pages/AIDashboardPage'
 import FieldSubmitPage from './pages/FieldSubmitPage'
 import LoginPage from './pages/LoginPage'
+import { DemoProvider } from './demo/DemoProvider'
+
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -28,7 +31,7 @@ export default function App() {
     setShowSplash(false)
   }
 
-  if (isLoading) return null
+  if (!DEMO_MODE && isLoading) return null
 
   return (
     <>
@@ -56,6 +59,24 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout />
             </ProtectedRoute>
+          }
+        >
+          <Route index element={<BriefingPage />} />
+          <Route path="sentiment" element={<SentimentPage />} />
+          <Route path="opponents" element={<OpponentPage />} />
+          <Route path="field-reports" element={<FieldReportsPage />} />
+          <Route path="painpoints" element={<PainPointsPage />} />
+          <Route path="map" element={<MapPage />} />
+          <Route path="ai-dashboard" element={<AIDashboardPage />} />
+        </Route>
+
+        {/* Public demo — no auth required, mock data via DemoProvider */}
+        <Route
+          path="/demo"
+          element={
+            <DemoProvider>
+              <DashboardLayout />
+            </DemoProvider>
           }
         >
           <Route index element={<BriefingPage />} />
