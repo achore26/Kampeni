@@ -262,7 +262,7 @@ export default function DashboardLayout() {
             style={{ background: '#1d4ed8', color: 'white' }}>
             <span>Viewing demo dashboard · Johnson Sakaja · Nairobi Senator</span>
             <Link
-              to="/login"
+              to="/request-access"
               className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold transition-colors"
               style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
             >

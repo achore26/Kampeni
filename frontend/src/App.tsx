@@ -19,6 +19,7 @@ import MapPage from './pages/MapPage'
 import AIDashboardPage from './pages/AIDashboardPage'
 import FieldSubmitPage from './pages/FieldSubmitPage'
 import LoginPage from './pages/LoginPage'
+import RequestAccessPage from './pages/RequestAccessPage'
 import { DemoProvider } from './demo/DemoProvider'
 
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
@@ -48,6 +49,7 @@ export default function App() {
 
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/request-access" element={<RequestAccessPage />} />
 
         {/* Field agent — minimal mobile layout, no dashboard sidebar */}
         <Route path="/field" element={<FieldSubmitPage />} />

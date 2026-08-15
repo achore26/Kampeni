@@ -207,12 +207,12 @@ export default function LoginPage() {
           {/* Invite notice */}
           <p className="text-center text-xs text-gray-400 mb-8">
             Don't have access?{' '}
-            <a
-              href="mailto:hello@kampeni.net"
+            <Link
+              to="/request-access"
               className="text-[#1d4ed8] hover:underline font-medium"
             >
               Request an invitation
-            </a>
+            </Link>
           </p>
 
           {/* Back link */}
