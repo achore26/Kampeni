@@ -133,6 +133,64 @@ function summaryFromArticles(articles: typeof DEMO_ARTICLES) {
   return { positive, negative, neutral, total: articles.length }
 }
 
+// ── County map data ─────────────────────────────────────────────────────────
+export const DEMO_COUNTY_DATA = [
+  { county: 'Nairobi',   painpoint_count: 47, top_issues: ['roads', 'water', 'security', 'housing', 'jobs'], sentiment_score:  0.23 },
+  { county: 'Kiambu',    painpoint_count: 12, top_issues: ['water', 'roads', 'school_fees'],                 sentiment_score:  0.15 },
+  { county: 'Machakos',  painpoint_count:  8, top_issues: ['roads', 'water', 'jobs'],                        sentiment_score: -0.05 },
+  { county: 'Kajiado',   painpoint_count:  6, top_issues: ['water', 'roads'],                                sentiment_score:  0.08 },
+  { county: "Murang'a",  painpoint_count:  5, top_issues: ['roads', 'health'],                               sentiment_score:  0.12 },
+  { county: 'Nakuru',    painpoint_count:  4, top_issues: ['economy', 'jobs'],                               sentiment_score:  0.05 },
+  { county: 'Mombasa',   painpoint_count:  3, top_issues: ['security', 'housing'],                           sentiment_score: -0.10 },
+]
+
+// ── Field Reports data ───────────────────────────────────────────────────────
+const DEMO_FIELD_REPORTS = [
+  { id: 'fr-1',  agent_id: 'agent-001', ward: 'Kayole Central',    report_type: 'canvassing', top_issue: 'roads',       support_level: 'strong_support',    notes: 'Residents strongly back Sakaja — road works in Outering Rd cited as proof of delivery.',  created_at: '2026-07-22T09:00:00Z' },
+  { id: 'fr-2',  agent_id: 'agent-002', ward: 'Mathare North',     report_type: 'canvassing', top_issue: 'water',       support_level: 'lean_support',      notes: "Support solid but water shortage remains top concern. Senator's office should respond.", created_at: '2026-07-22T08:30:00Z' },
+  { id: 'fr-3',  agent_id: 'agent-003', ward: 'Embakasi East',     report_type: 'canvassing', top_issue: 'security',    support_level: 'strong_support',    notes: 'Night patrols increase noted positively. Youth unemployment secondary concern.',          created_at: '2026-07-21T16:00:00Z' },
+  { id: 'fr-4',  agent_id: 'agent-004', ward: 'Kibra',             report_type: 'canvassing', top_issue: 'housing',     support_level: 'undecided',         notes: 'Eviction fears in Mukuru making residents cautious. Need clear communication.',          created_at: '2026-07-21T15:00:00Z' },
+  { id: 'fr-5',  agent_id: 'agent-001', ward: 'Westlands',         report_type: 'canvassing', top_issue: 'economy',     support_level: 'strong_support',    notes: 'Business community very positive on Innovation Hub and World Bank partnership news.',    created_at: '2026-07-21T11:00:00Z' },
+  { id: 'fr-6',  agent_id: 'agent-005', ward: 'Pumwani',           report_type: 'canvassing', top_issue: 'health',      support_level: 'lean_opposition',   notes: 'Maternity hospital equipment shortage causing frustration. Urgent action needed.',      created_at: '2026-07-20T14:00:00Z' },
+  { id: 'fr-7',  agent_id: 'agent-002', ward: 'Roysambu',          report_type: 'canvassing', top_issue: 'roads',       support_level: 'lean_support',      notes: 'Pothole concerns but residents appreciate county responsiveness compared to before.',     created_at: '2026-07-20T10:00:00Z' },
+  { id: 'fr-8',  agent_id: 'agent-006', ward: 'Starehe',           report_type: 'canvassing', top_issue: 'corruption',  support_level: 'undecided',         notes: "CBD hawker extortion widely discussed. Trust issue affecting Senator's urban rating.",   created_at: '2026-07-19T13:00:00Z' },
+  { id: 'fr-9',  agent_id: 'agent-003', ward: 'Kasarani',          report_type: 'canvassing', top_issue: 'jobs',        support_level: 'strong_support',    notes: 'Youth internship program praised. Residents want more. Strong energy for campaign.',     created_at: '2026-07-19T09:00:00Z' },
+  { id: 'fr-10', agent_id: 'agent-007', ward: 'Langata',           report_type: 'canvassing', top_issue: 'school_fees', support_level: 'lean_opposition',   notes: 'County school levy dispute unresolved. Parents frustrated. Needs policy clarification.', created_at: '2026-07-18T15:00:00Z' },
+  { id: 'fr-11', agent_id: 'agent-004', ward: 'Korogocho',         report_type: 'canvassing', top_issue: 'jobs',        support_level: 'undecided',         notes: '68% youth unemployment makes residents sceptical despite goodwill toward Senator.',      created_at: '2026-07-18T11:00:00Z' },
+  { id: 'fr-12', agent_id: 'agent-005', ward: 'Kilimani',          report_type: 'canvassing', top_issue: 'economy',     support_level: 'strong_support',    notes: 'Upper-income ward strongly backing Sakaja. Innovation Hub and World Bank seen as wins.', created_at: '2026-07-17T14:00:00Z' },
+]
+
+export const DEMO_FIELD_SUMMARY = {
+  total: DEMO_FIELD_REPORTS.length,
+  by_support: {
+    strong_support:    4,
+    lean_support:      3,
+    undecided:         3,
+    lean_opposition:   2,
+    strong_opposition: 0,
+  },
+  top_wards: [
+    { ward: 'Kayole Central', count: 2 },
+    { ward: 'Mathare North',  count: 2 },
+    { ward: 'Kasarani',       count: 2 },
+    { ward: 'Embakasi East',  count: 1 },
+    { ward: 'Kibra',          count: 1 },
+    { ward: 'Pumwani',        count: 1 },
+    { ward: 'Westlands',      count: 1 },
+  ],
+  by_issue: {
+    roads:       3,
+    jobs:        3,
+    water:       1,
+    security:    1,
+    health:      1,
+    housing:     1,
+    economy:     2,
+    corruption:  1,
+    school_fees: 1,
+  },
+}
+
 export function getDemoResponse(url: string, _method: string): unknown | null {
   const u = url.toLowerCase()
 
@@ -156,15 +214,29 @@ export function getDemoResponse(url: string, _method: string): unknown | null {
 
   if (u.includes('/briefings/latest'))            return DEMO_BRIEFING
   if (u.includes('/briefings/generate'))          return DEMO_BRIEFING
+
   if (u.includes('/opponents/') && u.includes('/mentions')) {
     const parts = url.split('/')
     const id = parts[parts.indexOf('opponents') + 1]
     return DEMO_OPPONENT_MENTIONS[id] ?? []
   }
   if (u.includes('/opponents/'))                  return DEMO_OPPONENTS
+
+  // County map — must come before generic /painpoints/ check
+  if (u.includes('/painpoints/by-county'))        return DEMO_COUNTY_DATA
   if (u.includes('/painpoints/summary'))          return DEMO_PAINPOINTS_SUMMARY
   if (u.includes('/painpoints/'))                 return DEMO_PAINPOINTS_RESPONSE
-  if (u.includes('/field-reports'))               return { total: 0, items: [] }
+
+  // Field reports — summary before list, and uses /intake/ prefix
+  if (u.includes('/field-reports/summary'))       return DEMO_FIELD_SUMMARY
+  if (u.includes('/field-reports')) {
+    const level = new URLSearchParams(url.split('?')[1] ?? '').get('support_level')
+    const reports = level && level !== 'all'
+      ? DEMO_FIELD_REPORTS.filter(r => r.support_level === level)
+      : DEMO_FIELD_REPORTS
+    return { total: reports.length, reports }
+  }
+
   if (u.includes('/pipeline/refresh'))            return { ingestion: { saved: 14 }, sentiment: { processed: 9 } }
 
   return null
