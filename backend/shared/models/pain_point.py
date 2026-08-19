@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,6 +32,9 @@ class PainPoint(Base):
 
     # Politicians mentioned
     politicians_mentioned: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+
+    # Candidate scoping — which candidate's pipeline extracted this
+    candidate_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
 
     # Meta
     source_language: Mapped[str | None] = mapped_column(String(8), nullable=True)

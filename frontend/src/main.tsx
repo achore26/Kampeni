@@ -7,7 +7,9 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import AuthTokenSync from './components/AuthTokenSync'
 import { LanguageProvider } from './contexts/LanguageContext'
+import { CandidateProvider } from './contexts/CandidateContext'
 import './index.css'
+import 'leaflet/dist/leaflet.css'
 import './i18n'
 
 const queryClient = new QueryClient({
@@ -54,7 +56,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <QueryClientProvider client={queryClient}>
             <AuthTokenSync />
             <LanguageProvider>
-              <App />
+              <CandidateProvider>
+                <App />
+              </CandidateProvider>
             </LanguageProvider>
           </QueryClientProvider>
         </Auth0ProviderWithNavigate>

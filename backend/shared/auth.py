@@ -108,10 +108,16 @@ def get_candidate_id(user: CurrentUser) -> str:
     Auth0 Actions inject this as a namespaced claim. Falls back to the user's
     sub (user ID) so every user is automatically scoped — no data leaks between
     candidates even before Auth0 Actions are configured.
+
+    In non-production environments, DEV_CANDIDATE_ID env var overrides the JWT
+    value — useful when Auth0 Actions aren't configured yet.
     """
+    import os
     for key in (f"{_CLAIM_NS}/candidate_id", "candidate_id"):
         if cid := user.get(key):
             return str(cid)
+    if settings.app_env != "production" and (dev_id := os.getenv("DEV_CANDIDATE_ID", "")):
+        return dev_id
     return user.get("sub", "default")
 
 

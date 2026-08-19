@@ -44,6 +44,7 @@ class FieldReport(BaseModel):
     top_issue: IssueCategory
     support_level: SupportLevel
     notes: str | None = Field(None, max_length=500)
+    candidate_id: str | None = None
     latitude: float | None = None
     longitude: float | None = None
 
@@ -62,12 +63,15 @@ async def submit_field_report(report: FieldReport) -> dict:
 async def list_field_reports(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    candidate_id: str | None = Query(None),
     support_level: str | None = Query(None),
     ward: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """List field reports with optional filters."""
     q = select(FieldReportRecord).order_by(FieldReportRecord.created_at.desc())
+    if candidate_id:
+        q = q.where(FieldReportRecord.candidate_id == candidate_id)
     if support_level:
         q = q.where(FieldReportRecord.support_level == support_level)
     if ward:
@@ -88,6 +92,7 @@ async def list_field_reports(
                 "top_issue": r.top_issue,
                 "support_level": r.support_level,
                 "notes": r.notes,
+                "candidate_id": r.candidate_id,
                 "latitude": r.latitude,
                 "longitude": r.longitude,
                 "created_at": r.created_at.isoformat(),
@@ -98,19 +103,28 @@ async def list_field_reports(
 
 
 @router.get("/field-reports/summary")
-async def field_reports_summary(db: AsyncSession = Depends(get_db)) -> dict:
-    """Aggregate counts by support level and top wards."""
-    total_row = await db.execute(select(func.count()).select_from(FieldReportRecord))
+async def field_reports_summary(
+    candidate_id: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Aggregate counts by support level and top wards, scoped to a candidate."""
+    base_filter = (FieldReportRecord.candidate_id == candidate_id) if candidate_id else True
+
+    total_row = await db.execute(
+        select(func.count()).select_from(FieldReportRecord).where(base_filter)
+    )
     total = total_row.scalar_one()
 
     support_rows = await db.execute(
         select(FieldReportRecord.support_level, func.count().label("n"))
+        .where(base_filter)
         .group_by(FieldReportRecord.support_level)
     )
     support_counts = {row.support_level: row.n for row in support_rows}
 
     ward_rows = await db.execute(
         select(FieldReportRecord.ward, func.count().label("n"))
+        .where(base_filter)
         .group_by(FieldReportRecord.ward)
         .order_by(func.count().desc())
         .limit(5)
@@ -119,6 +133,7 @@ async def field_reports_summary(db: AsyncSession = Depends(get_db)) -> dict:
 
     issue_rows = await db.execute(
         select(FieldReportRecord.top_issue, func.count().label("n"))
+        .where(base_filter)
         .group_by(FieldReportRecord.top_issue)
         .order_by(func.count().desc())
     )

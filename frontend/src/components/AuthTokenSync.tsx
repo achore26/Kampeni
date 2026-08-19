@@ -2,15 +2,13 @@ import { useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { setTokenProvider, setLogoutHandler } from '../api/client'
 
-/**
- * Mounts once inside Auth0Provider and wires getAccessTokenSilently
- * into the axios client so all requests automatically carry a valid JWT.
- * Also registers a logout handler so 401 responses redirect to /login.
- */
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
+
 export default function AuthTokenSync() {
   const { getAccessTokenSilently, logout } = useAuth0()
 
   useEffect(() => {
+    if (DEMO_MODE) return
     setTokenProvider(() =>
       getAccessTokenSilently({
         authorizationParams: {

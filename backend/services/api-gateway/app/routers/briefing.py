@@ -4,7 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from shared.auth import CurrentUser, PoliticalDirectorOrAbove, CampaignManagerOrAbove
+from shared.auth import CandidateId, CurrentUser, PoliticalDirectorOrAbove, CampaignManagerOrAbove
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -42,21 +42,18 @@ async def _proxy_post(path: str, body: dict | None = None) -> dict:
 
 
 @router.get("/latest")
-async def get_latest_briefing(
-    user: CurrentUser,
-    candidate_id: str = Query(..., description="Candidate ID to fetch briefing for"),
-) -> dict | None:
-    """Fetch today's AI briefing for the given candidate."""
+async def get_latest_briefing(user: CurrentUser, candidate_id: CandidateId) -> dict | None:
+    """Fetch today's AI briefing for the authenticated candidate."""
     return await _proxy_get(f"/briefings/{candidate_id}/latest")
 
 
 @router.get("/history")
 async def get_briefing_history(
     user: CurrentUser,
-    candidate_id: str = Query(...),
+    candidate_id: CandidateId,
     limit: int = Query(30, le=90),
 ) -> list:
-    """Last N daily briefings for a candidate."""
+    """Last N daily briefings for the authenticated candidate."""
     result = await _proxy_get(f"/briefings/{candidate_id}/history", {"limit": limit})
     return result or []
 
@@ -64,10 +61,10 @@ async def get_briefing_history(
 @router.post("/generate")
 async def generate_briefing(
     user: CurrentUser,
+    candidate_id: CandidateId,
     _: dict = CampaignManagerOrAbove,
-    candidate_id: str = Query(...),
 ) -> dict:
-    """Trigger on-demand briefing generation for a candidate."""
+    """Trigger on-demand briefing generation for the authenticated candidate."""
     return await _proxy_post(f"/briefings/{candidate_id}/generate")
 
 
@@ -75,8 +72,8 @@ async def generate_briefing(
 async def approve_briefing(
     user: CurrentUser,
     briefing_id: str,
+    candidate_id: CandidateId,
     _: dict = PoliticalDirectorOrAbove,
-    candidate_id: str = Query(...),
     request: Request = None,
 ) -> dict:
     """Political Director approves a briefing before 6am delivery."""

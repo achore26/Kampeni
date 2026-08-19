@@ -10,8 +10,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { apiClient } from '../api/client'
-
-const CANDIDATE_ID = import.meta.env.VITE_CANDIDATE_ID || ''
+import { useCandidateId } from '../contexts/CandidateContext'
 
 interface Summary { positive: number; negative: number; neutral: number; total: number }
 interface Article {
@@ -40,8 +39,13 @@ function pct(n: number, total: number) {
   return total ? Math.round((n / total) * 100) : 0
 }
 
-function getGreeting() {
+function getGreeting(lang: string) {
   const h = new Date().getHours()
+  if (lang === 'en') {
+    if (h < 12) return 'Good Morning'
+    if (h < 17) return 'Good Afternoon'
+    return 'Good Evening'
+  }
   if (h < 12) return 'Habari za Asubuhi'
   if (h < 17) return 'Habari za Mchana'
   return 'Habari za Jioni'
@@ -182,8 +186,10 @@ function SBar({ label, count, total, color }: { label: string; count: number; to
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function BriefingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth0()
+  const candidateId = useCandidateId()
+  const isEn = i18n.language === 'en'
 
   const [summary, setSummary] = useState<Summary | null>(null)
   const [articles, setArticles] = useState<Article[]>([])
@@ -195,8 +201,8 @@ export default function BriefingPage() {
   const [error, setError] = useState<string | null>(null)
 
   const loadBriefing = () => {
-    if (!CANDIDATE_ID) return
-    apiClient.get<Briefing | null>(`/briefings/latest?candidate_id=${encodeURIComponent(CANDIDATE_ID)}`)
+    if (!candidateId) return
+    apiClient.get<Briefing | null>(`/briefings/latest?candidate_id=${encodeURIComponent(candidateId)}`)
       .then(r => setBriefing(r.data)).catch(() => {})
   }
 
@@ -217,10 +223,10 @@ export default function BriefingPage() {
   }, [])
 
   const handleGenerate = async () => {
-    if (!CANDIDATE_ID) return
+    if (!candidateId) return
     setGenerating(true); setError(null)
     try {
-      await apiClient.post(`/briefings/generate?candidate_id=${encodeURIComponent(CANDIDATE_ID)}`)
+      await apiClient.post(`/briefings/generate?candidate_id=${encodeURIComponent(candidateId)}`)
       await new Promise(r => setTimeout(r, 1500))
       loadBriefing()
     } catch { setError(t('briefing.generateError')) }
@@ -232,7 +238,7 @@ export default function BriefingPage() {
     setApproving(true); setError(null)
     try {
       const res = await apiClient.post(
-        `/briefings/${briefing.id}/approve?candidate_id=${encodeURIComponent(CANDIDATE_ID)}`,
+        `/briefings/${briefing.id}/approve?candidate_id=${encodeURIComponent(candidateId)}`,
         { approved_by: user?.name || user?.email || 'Political Director' }
       )
       setBriefing(res.data)
@@ -244,7 +250,7 @@ export default function BriefingPage() {
   const isToday = briefing?.briefing_date === today
   const maxMentions = opponents[0]?.mention_count || 1
   const totalMentions = opponents.reduce((s, o) => s + o.mention_count, 0)
-  const firstName = user?.name?.split(' ')[0] || 'Mgombea'
+  const firstName = user?.name?.split(' ')[0] || (isEn ? 'Governor' : 'Mgombea')
   const dateLabel = new Date().toLocaleDateString('en-KE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -262,7 +268,7 @@ export default function BriefingPage() {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-2xl font-black text-gray-900 tracking-tight">
-              {getGreeting()}, <span style={{ color: '#1d4ed8' }}>{firstName}!</span>
+              {getGreeting(i18n.language)}, <span style={{ color: '#1d4ed8' }}>{firstName}!</span>
             </p>
           </div>
           <p className="text-sm text-gray-500">{dateLabel}</p>
@@ -304,36 +310,36 @@ export default function BriefingPage() {
       {/* ── KPI row — filled colored cards ──────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Makala Zilizochambuliwa"
+          label={isEn ? 'Articles Analysed' : 'Makala Zilizochambuliwa'}
           value={(summary?.total ?? 0).toLocaleString()}
-          sub="kutoka vyanzo vyote"
+          sub={isEn ? 'across all sources' : 'kutoka vyanzo vyote'}
           bg="#1d4ed8"
           Icon={Activity}
           index={0}
           loaded={!loading}
         />
         <KpiCard
-          label="Msimamo Mzuri"
+          label={isEn ? 'Positive Sentiment' : 'Msimamo Mzuri'}
           value={`${pct(summary?.positive ?? 0, summary?.total ?? 0)}%`}
-          sub={`makala ${summary?.positive ?? 0}`}
+          sub={isEn ? `${summary?.positive ?? 0} articles` : `makala ${summary?.positive ?? 0}`}
           bg="#16a34a"
           Icon={TrendingUp}
           index={1}
           loaded={!loading}
         />
         <KpiCard
-          label="Msimamo Mbaya"
+          label={isEn ? 'Negative Sentiment' : 'Msimamo Mbaya'}
           value={`${pct(summary?.negative ?? 0, summary?.total ?? 0)}%`}
-          sub={`makala ${summary?.negative ?? 0}`}
+          sub={isEn ? `${summary?.negative ?? 0} articles` : `makala ${summary?.negative ?? 0}`}
           bg="#dc2626"
           Icon={TrendingDown}
           index={2}
           loaded={!loading}
         />
         <KpiCard
-          label="Wapinzani Wanaofuatiliwa"
+          label={isEn ? 'Opponents Tracked' : 'Wapinzani Wanaofuatiliwa'}
           value={opponents.length}
-          sub={`kutajwa ${totalMentions} mara`}
+          sub={isEn ? `${totalMentions} total mentions` : `kutajwa ${totalMentions} mara`}
           bg="#0d1b2a"
           Icon={Users}
           index={3}
@@ -359,27 +365,27 @@ export default function BriefingPage() {
             style={{ borderBottom: '1px solid #f0f0f0' }}>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
-                Muhtasari wa Akili wa Kila Siku
+                {isEn ? 'AI Daily Intelligence Briefing' : 'Muhtasari wa Akili wa Kila Siku'}
               </p>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="text-sm font-bold text-gray-900">
-                  {briefing ? (isToday ? 'Muhtasari wa Leo' : briefing.briefing_date) : 'Haijaandaliwa'}
+                  {briefing ? (isToday ? (isEn ? "Today's Briefing" : 'Muhtasari wa Leo') : briefing.briefing_date) : (isEn ? 'Not yet prepared' : 'Haijaandaliwa')}
                 </span>
                 {briefing?.is_approved && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white rounded-full px-2 py-0.5"
                     style={{ background: '#16a34a' }}>
-                    <CheckCircle2 className="w-2.5 h-2.5" /> IMEIDHINISHWA
+                    <CheckCircle2 className="w-2.5 h-2.5" /> {isEn ? 'APPROVED' : 'IMEIDHINISHWA'}
                   </span>
                 )}
                 {briefing && !briefing.is_approved && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-0.5"
                     style={{ background: '#fef3c7', color: '#92400e' }}>
-                    <Clock className="w-2.5 h-2.5" /> INASUBIRI
+                    <Clock className="w-2.5 h-2.5" /> {isEn ? 'PENDING' : 'INASUBIRI'}
                   </span>
                 )}
                 {briefing?.used_mock && (
                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                    MFANO
+                    {isEn ? 'DEMO' : 'MFANO'}
                   </span>
                 )}
               </div>
@@ -389,14 +395,14 @@ export default function BriefingPage() {
                 <Button size="sm" onClick={handleApprove} disabled={approving}
                   className="h-8 text-xs gap-1.5 rounded-xl">
                   {approving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                  Idhinisha
+                  {isEn ? 'Approve' : 'Idhinisha'}
                 </Button>
               )}
               <Button size="sm" variant="outline" onClick={handleGenerate}
-                disabled={generating || !CANDIDATE_ID}
+                disabled={generating || !candidateId}
                 className="h-8 text-xs gap-1.5 rounded-xl border-gray-200">
                 {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                {generating ? 'Inaandaa…' : 'Andaa'}
+                {generating ? (isEn ? 'Generating…' : 'Inaandaa…') : (isEn ? 'Generate' : 'Andaa')}
               </Button>
             </div>
           </div>
@@ -422,17 +428,17 @@ export default function BriefingPage() {
                   style={{ background: '#eff6ff' }}>
                   <Newspaper className="w-7 h-7" style={{ color: '#1d4ed8' }} />
                 </div>
-                <p className="text-sm font-bold text-gray-700 mb-1">Hakuna muhtasari bado</p>
+                <p className="text-sm font-bold text-gray-700 mb-1">{isEn ? 'No briefing yet' : 'Hakuna muhtasari bado'}</p>
                 <p className="text-xs text-gray-400 mb-5 max-w-xs leading-relaxed">
-                  {CANDIDATE_ID
-                    ? 'Andaa muhtasari wa AI wa leo — unajumuisha habari za usiku, hisia za wananchi na shughuli za wapinzani.'
-                    : 'Weka VITE_CANDIDATE_ID ili kuwezesha muhtasari.'}
+                  {candidateId
+                    ? (isEn ? "Generate today's AI briefing — includes overnight news, public sentiment, and opponent activity." : 'Andaa muhtasari wa AI wa leo — unajumuisha habari za usiku, hisia za wananchi na shughuli za wapinzani.')
+                    : (isEn ? 'Set VITE_candidateId to enable briefings.' : 'Weka VITE_candidateId ili kuwezesha muhtasari.')}
                 </p>
-                {CANDIDATE_ID && (
+                {candidateId && (
                   <Button size="sm" onClick={handleGenerate} disabled={generating}
                     className="gap-2 rounded-xl">
                     {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                    Andaa Muhtasari
+                    {isEn ? 'Generate Briefing' : 'Andaa Muhtasari'}
                   </Button>
                 )}
               </div>
@@ -444,7 +450,7 @@ export default function BriefingPage() {
           {briefing?.delivered_at && (
             <div className="px-6 py-3 bg-gray-50" style={{ borderTop: '1px solid #f0f0f0' }}>
               <p className="text-xs text-gray-400">
-                Imetumwa kupitia {briefing.delivery_channels?.join(', ') || 'SMS'} · saa{' '}
+                {isEn ? 'Delivered via' : 'Imetumwa kupitia'} {briefing.delivery_channels?.join(', ') || 'SMS'} · {isEn ? 'at' : 'saa'}{' '}
                 {new Date(briefing.delivered_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} EAT
               </p>
             </div>
@@ -460,12 +466,12 @@ export default function BriefingPage() {
             <div className="px-5 py-4 flex items-center justify-between"
               style={{ borderBottom: '1px solid #f0f0f0' }}>
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                Hisia za Wananchi
+                {isEn ? 'Public Sentiment' : 'Hisia za Wananchi'}
               </p>
               <NavLink to="/dashboard/sentiment"
                 className="text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity"
                 style={{ color: '#1d4ed8' }}>
-                Maelezo <ArrowRight className="w-3 h-3" />
+                {isEn ? 'Details' : 'Maelezo'} <ArrowRight className="w-3 h-3" />
               </NavLink>
             </div>
             <div className="px-5 py-4 space-y-4">
@@ -482,11 +488,11 @@ export default function BriefingPage() {
                 </>
               ) : summary ? (
                 <>
-                  <SBar label="Mzuri" count={summary.positive} total={summary.total} color="#16a34a" />
-                  <SBar label="Mbaya" count={summary.negative} total={summary.total} color="#dc2626" />
-                  <SBar label="Wastani" count={summary.neutral} total={summary.total} color="#9ca3af" />
+                  <SBar label={isEn ? 'Positive' : 'Mzuri'} count={summary.positive} total={summary.total} color="#16a34a" />
+                  <SBar label={isEn ? 'Negative' : 'Mbaya'} count={summary.negative} total={summary.total} color="#dc2626" />
+                  <SBar label={isEn ? 'Neutral' : 'Wastani'} count={summary.neutral} total={summary.total} color="#9ca3af" />
                   <p className="text-xs text-gray-400 pt-2" style={{ borderTop: '1px solid #f5f5f5' }}>
-                    Makala <span className="font-bold text-gray-700">{summary.total.toLocaleString()}</span> zimechambuliwa · moja kwa moja
+                    {isEn ? <><span className="font-bold text-gray-700">{summary.total.toLocaleString()}</span> articles analysed · live</> : <>Makala <span className="font-bold text-gray-700">{summary.total.toLocaleString()}</span> zimechambuliwa · moja kwa moja</>}
                   </p>
                 </>
               ) : null}
@@ -499,12 +505,12 @@ export default function BriefingPage() {
             <div className="px-5 py-4 flex items-center justify-between"
               style={{ borderBottom: '1px solid #f0f0f0' }}>
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                Vichwa vya Habari
+                {isEn ? 'Latest Headlines' : 'Vichwa vya Habari'}
               </p>
               <NavLink to="/dashboard/sentiment"
                 className="text-xs font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity"
                 style={{ color: '#1d4ed8' }}>
-                Zote <ArrowRight className="w-3 h-3" />
+                {isEn ? 'All' : 'Zote'} <ArrowRight className="w-3 h-3" />
               </NavLink>
             </div>
             <ul className="flex-1">
@@ -520,7 +526,7 @@ export default function BriefingPage() {
                   </li>
                 ))
               ) : articles.length === 0 ? (
-                <li className="px-5 py-8 text-center text-xs text-gray-400">Hakuna makala bado</li>
+                <li className="px-5 py-8 text-center text-xs text-gray-400">{isEn ? 'No articles yet' : 'Hakuna makala bado'}</li>
               ) : articles.map((art, i) => {
                 const dotColor = art.label === 'positive' ? '#16a34a'
                   : art.label === 'negative' ? '#dc2626' : '#d1d5db'
@@ -565,14 +571,14 @@ export default function BriefingPage() {
           style={{ borderBottom: '1px solid #f0f0f0' }}>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-0.5">
-              Akili ya Wapinzani
+              {isEn ? 'Opponent Intelligence' : 'Akili ya Wapinzani'}
             </p>
-            <p className="text-sm font-bold text-gray-900">Imepangwa kwa kutajwa na vyombo vya habari</p>
+            <p className="text-sm font-bold text-gray-900">{isEn ? 'Ranked by media mentions' : 'Imepangwa kwa kutajwa na vyombo vya habari'}</p>
           </div>
           <NavLink to="/dashboard/opponents"
             className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity"
             style={{ color: '#1d4ed8' }}>
-            Simamia <ArrowRight className="w-3 h-3" />
+            {isEn ? 'Monitor' : 'Simamia'} <ArrowRight className="w-3 h-3" />
           </NavLink>
         </div>
 
@@ -596,11 +602,11 @@ export default function BriefingPage() {
             <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
               <Users className="w-6 h-6 text-gray-300" />
             </div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Hakuna wapinzani wanaofuatiliwa</p>
+            <p className="text-sm font-medium text-gray-600 mb-1">{isEn ? 'No opponents being tracked' : 'Hakuna wapinzani wanaofuatiliwa'}</p>
             <NavLink to="/dashboard/opponents"
               className="text-xs font-semibold hover:underline"
               style={{ color: '#1d4ed8' }}>
-              Ongeza wapinzani wa kufuatilia →
+              {isEn ? 'Add opponents to track →' : 'Ongeza wapinzani wa kufuatilia →'}
             </NavLink>
           </div>
         ) : (
@@ -642,12 +648,12 @@ export default function BriefingPage() {
                     <span className="text-sm font-black text-gray-800 w-8 text-right tabular-nums shrink-0">
                       {opp.mention_count}
                     </span>
-                    <span className="text-xs text-gray-400 shrink-0 hidden md:block">kutajwa</span>
+                    <span className="text-xs text-gray-400 shrink-0 hidden md:block">{isEn ? 'mentions' : 'kutajwa'}</span>
                   </div>
                   {opp.is_incumbent && (
                     <span className="text-[10px] font-bold rounded-full px-2 py-0.5 hidden lg:block"
                       style={{ background: '#fef3c7', color: '#92400e' }}>
-                      Mamlakani
+                      {isEn ? 'Incumbent' : 'Mamlakani'}
                     </span>
                   )}
                 </motion.div>

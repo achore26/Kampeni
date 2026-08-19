@@ -16,7 +16,7 @@ interface PainPointItem {
   politicians: string[]; confidence: number; used_mock: boolean; created_at: string
 }
 interface Summary { by_category: { category: string; count: number }[]; total: number }
-interface CountyData { by_county: { county: string; count: number }[] }
+interface CountyData { county: string; count: number; painpoint_count?: number }
 interface ListData { total: number; items: PainPointItem[] }
 
 const SEVERITY_VARIANT: Record<string, 'negative' | 'warning' | 'neutral'> = {
@@ -52,7 +52,7 @@ export default function PainPointsPage() {
   const { i18n } = useTranslation()
   const isEn = i18n.language === 'en'
   const [summary, setSummary] = useState<Summary | null>(null)
-  const [counties, setCounties] = useState<CountyData | null>(null)
+  const [counties, setCounties] = useState<CountyData[]>([])
   const [items, setItems] = useState<PainPointItem[]>([])
   const [allItems, setAllItems] = useState<PainPointItem[]>([])
   const [total, setTotal] = useState(0)
@@ -74,7 +74,7 @@ export default function PainPointsPage() {
     ])
       .then(([s, c, l]) => {
         setSummary(s.data)
-        setCounties(c.data)
+        setCounties(Array.isArray(c.data) ? c.data : (c.data as any)?.by_county ?? [])
         setItems(l.data.items ?? [])
         setAllItems(l.data.items ?? [])
         setTotal(l.data.total ?? 0)
@@ -110,8 +110,8 @@ export default function PainPointsPage() {
     { name: isEn ? 'Low' : 'Chini', value: allItems.filter(i => i.severity === 'low').length, color: '#86efac' },
   ].filter(d => d.value > 0)
 
-  const topCounties = (counties?.by_county ?? []).slice(0, 5)
-  const maxCounty = Math.max(...topCounties.map(c => c.count), 1)
+  const topCounties = counties.slice(0, 5)
+  const maxCounty = Math.max(...topCounties.map(c => c.painpoint_count ?? c.count), 1)
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -255,23 +255,26 @@ export default function PainPointsPage() {
             </p>
           ) : (
             <ul className="space-y-2.5">
-              {topCounties.map(({ county, count }, i) => (
-                <li key={county} className="flex items-center gap-3">
-                  <span className="w-5 text-xs font-bold text-gray-300 text-center">#{i + 1}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{county}</span>
-                      <span className="text-xs text-gray-400">{count}</span>
+              {topCounties.map((c, i) => {
+                const n = c.painpoint_count ?? c.count
+                return (
+                  <li key={c.county} className="flex items-center gap-3">
+                    <span className="w-5 text-xs font-bold text-gray-300 text-center">#{i + 1}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900">{c.county}</span>
+                        <span className="text-xs text-gray-400">{n}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${(n / maxCounty) * 100}%`, background: '#f97316' }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${(count / maxCounty) * 100}%`, background: '#f97316' }}
-                      />
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </CardContent>

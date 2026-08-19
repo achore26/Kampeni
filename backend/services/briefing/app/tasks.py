@@ -32,6 +32,42 @@ def _get_db_session():
     return sessionmaker(bind=engine)()
 
 
+def generate_for_candidate(candidate_id: str) -> dict:
+    """Generate today's briefing for a single candidate (on-demand)."""
+    generator = BriefingGenerator()
+    today = datetime.now(timezone.utc).date()
+    db = _get_db_session()
+    try:
+        existing = db.query(Briefing).filter(
+            Briefing.candidate_id == candidate_id,
+            Briefing.briefing_date == today,
+        ).first()
+        if existing:
+            logger.info("Briefing already exists for %s on %s — regenerating", candidate_id, today)
+            db.delete(existing)
+            db.commit()
+
+        result = generator.generate(candidate_id, language=settings.briefing_language)
+        briefing = Briefing(
+            candidate_id=candidate_id,
+            briefing_date=result.briefing_date,
+            language=result.language,
+            sections=result.sections,
+            raw_context=result.raw_context,
+            is_approved=False,
+            used_mock=result.used_mock,
+        )
+        db.add(briefing)
+        db.commit()
+        logger.info("Briefing generated for %s (used_mock=%s)", candidate_id, result.used_mock)
+        return {"generated": 1, "used_mock": result.used_mock}
+    except Exception as exc:
+        logger.error("Briefing generation failed for %s: %s", candidate_id, exc)
+        return {"generated": 0, "error": str(exc)}
+    finally:
+        db.close()
+
+
 def generate_all_briefings() -> dict:
     """Generate daily briefings for all configured candidates."""
     candidate_ids = [c.strip() for c in settings.candidate_ids.split(",") if c.strip()]

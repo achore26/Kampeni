@@ -4,7 +4,7 @@ from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from shared.auth import CurrentUser
+from shared.auth import CandidateId, CurrentUser
 from ..config import GatewaySettings
 
 router = APIRouter()
@@ -40,16 +40,16 @@ async def _proxy_post(path: str, body: dict) -> dict:
 
 
 @router.get("/")
-async def list_opponents(user: CurrentUser, candidate_id: str | None = Query(None)) -> list:
-    """List all tracked opponents with total mention counts."""
-    params = {"candidate_id": candidate_id} if candidate_id else None
-    return await _proxy_get("/opponents/", params)
+async def list_opponents(user: CurrentUser, candidate_id: CandidateId) -> list:
+    """List all tracked opponents for the authenticated candidate."""
+    return await _proxy_get("/opponents/", {"candidate_id": candidate_id})
 
 
 @router.post("/")
-async def add_opponent(user: CurrentUser, request: Request) -> dict:
+async def add_opponent(user: CurrentUser, candidate_id: CandidateId, request: Request) -> dict:
     """Register a new opponent to monitor."""
     body = await request.json()
+    body["candidate_id"] = candidate_id
     return await _proxy_post("/opponents/", body)
 
 

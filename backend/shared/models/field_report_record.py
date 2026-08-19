@@ -23,6 +23,7 @@ class FieldReportRecord(Base):
     top_issue: Mapped[str] = mapped_column(String(50), nullable=False)
     support_level: Mapped[str] = mapped_column(String(50), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    candidate_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

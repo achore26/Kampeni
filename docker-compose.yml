@@ -53,7 +53,7 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9090"
     ports:
-      - "9000:9000"             # S3 API (needed by services on host for local dev)
+      - "19000:9000"            # S3 API — remapped to 19000 to avoid local port conflicts
       - "127.0.0.1:9090:9090"  # MinIO console — local access only
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kampeni}
@@ -69,8 +69,8 @@ services:
   # ─── Backend Services ─────────────────────────────────────────────────────
   api-gateway:
     build:
-      context: ./backend
-      dockerfile: services/api-gateway/Dockerfile
+      context: .
+      dockerfile: backend/services/api-gateway/Dockerfile
     env_file: .env
     ports:
       - "8000:8000"
@@ -89,11 +89,14 @@ services:
       - INGESTION_SERVICE_URL=http://ingestion:8004
       - TRANSLATION_SERVICE_URL=http://translation:8005
       - PAINPOINT_SERVICE_URL=http://painpoint:8006
+      - DEV_CANDIDATE_ID=sakaja-nairobi
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - INTERNAL_TRIGGER_SECRET=${INTERNAL_TRIGGER_SECRET}
 
   ingestion:
     build:
-      context: ./backend
-      dockerfile: services/ingestion/Dockerfile
+      context: .
+      dockerfile: backend/services/ingestion/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8004:8004"
@@ -105,6 +108,7 @@ services:
       minio:
         condition: service_healthy
     environment:
+      - PORT=8004
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
@@ -114,8 +118,8 @@ services:
 
   sentiment:
     build:
-      context: ./backend
-      dockerfile: services/sentiment/Dockerfile
+      context: .
+      dockerfile: backend/services/sentiment/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8001:8001"
@@ -127,14 +131,16 @@ services:
       qdrant:
         condition: service_started
     environment:
+      - PORT=8001
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - QDRANT_HOST=qdrant
+      - DEV_CANDIDATE_ID=sakaja-nairobi
 
   opponent:
     build:
-      context: ./backend
-      dockerfile: services/opponent/Dockerfile
+      context: .
+      dockerfile: backend/services/opponent/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8002:8002"
@@ -149,8 +155,8 @@ services:
 
   briefing:
     build:
-      context: ./backend
-      dockerfile: services/briefing/Dockerfile
+      context: .
+      dockerfile: backend/services/briefing/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8003:8003"
@@ -162,11 +168,14 @@ services:
     environment:
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
+      - CANDIDATE_IDS=sakaja-nairobi
+      - BRIEFING_LANGUAGE=en
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
   translation:
     build:
-      context: ./backend
-      dockerfile: services/translation/Dockerfile
+      context: .
+      dockerfile: backend/services/translation/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8005:8005"
@@ -176,6 +185,7 @@ services:
       minio:
         condition: service_healthy
     environment:
+      - PORT=8005
       - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-kampeni}
@@ -184,8 +194,8 @@ services:
 
   painpoint:
     build:
-      context: ./backend
-      dockerfile: services/painpoint/Dockerfile
+      context: .
+      dockerfile: backend/services/painpoint/Dockerfile
     env_file: .env
     ports:
       - "127.0.0.1:8006:8006"
@@ -197,6 +207,7 @@ services:
       minio:
         condition: service_healthy
     environment:
+      - PORT=8006
       - POSTGRES_HOST=postgres
       - REDIS_URL=redis://:${REDIS_PASSWORD:-kampeni_redis_dev}@redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
@@ -261,13 +272,14 @@ services:
         - VITE_API_URL=${VITE_API_URL:-/api/v1}
         - VITE_CANDIDATE_ID=${VITE_CANDIDATE_ID}
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - API_GATEWAY_URL=http://api-gateway:8000
       - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN}
       - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID}
       - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE}
-      - VITE_CANDIDATE_ID=${VITE_CANDIDATE_ID}
+      - VITE_CANDIDATE_ID=sakaja-nairobi
+      - VITE_DEMO_MODE=true
     volumes:
       - ./frontend/src:/app/src
     depends_on:

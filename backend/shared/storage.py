@@ -28,14 +28,18 @@ logger = logging.getLogger(__name__)
 
 def _client():
     settings = get_settings()
-    return boto3.client(
-        "s3",
-        endpoint_url=settings.minio_endpoint,
-        aws_access_key_id=settings.minio_access_key,
-        aws_secret_access_key=settings.minio_secret_key,
-        config=Config(signature_version="s3v4"),
-        region_name="us-east-1",  # MinIO ignores this but boto3 requires it
-    )
+    # When MINIO_ENDPOINT is blank, we're on AWS — use the IAM task role (no keys needed).
+    # When it's set, we're local and need explicit MinIO credentials.
+    if settings.minio_endpoint:
+        return boto3.client(
+            "s3",
+            endpoint_url=settings.minio_endpoint,
+            aws_access_key_id=settings.minio_access_key,
+            aws_secret_access_key=settings.minio_secret_key,
+            config=Config(signature_version="s3v4"),
+            region_name="us-east-1",
+        )
+    return boto3.client("s3")
 
 
 def ensure_bucket() -> None:

@@ -61,6 +61,7 @@ async def classify_sentiment(request: SentimentRequest) -> SentimentResponse:
 @router.get("/articles", response_model=list[ArticleSentimentOut])
 async def list_article_sentiments(
     db: DbSession,
+    candidate_id: str | None = Query(None),
     source: str | None = Query(None),
     label: str | None = Query(None),
     limit: int = Query(50, le=200),
@@ -73,6 +74,8 @@ async def list_article_sentiments(
         .limit(limit)
         .offset(offset)
     )
+    if candidate_id:
+        stmt = stmt.where(SentimentRecord.candidate_id == candidate_id)
     if source:
         stmt = stmt.where(Article.source == source)
     if label:
@@ -97,11 +100,14 @@ async def list_article_sentiments(
 @router.get("/summary", response_model=SentimentBreakdown)
 async def get_sentiment_summary(
     db: DbSession,
+    candidate_id: str | None = Query(None),
     source: str | None = Query(None),
 ) -> SentimentBreakdown:
     stmt = select(SentimentRecord.label, func.count(SentimentRecord.id)).group_by(
         SentimentRecord.label
     )
+    if candidate_id:
+        stmt = stmt.where(SentimentRecord.candidate_id == candidate_id)
     if source:
         stmt = stmt.join(Article, Article.id == SentimentRecord.article_id).where(
             Article.source == source
@@ -120,6 +126,7 @@ async def get_sentiment_summary(
 @router.get("/trend")
 async def get_sentiment_trend(
     db: DbSession,
+    candidate_id: str | None = Query(None),
     days: int = Query(7, ge=1, le=30),
 ) -> list[dict]:
     """Daily sentiment breakdown for the last N days. Returns [{date, positive, negative, neutral}]."""
@@ -137,6 +144,8 @@ async def get_sentiment_trend(
         .group_by(func.date(Article.published_at), SentimentRecord.label)
         .order_by(func.date(Article.published_at).asc())
     )
+    if candidate_id:
+        stmt = stmt.where(SentimentRecord.candidate_id == candidate_id)
 
     result = await db.execute(stmt)
 

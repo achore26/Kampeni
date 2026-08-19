@@ -20,14 +20,15 @@ def get_db():
 
 
 @router.get("/summary")
-def summary(db: Session = Depends(get_db)) -> dict:
-    """Aggregated pain point counts by category."""
-    rows = (
-        db.query(PainPoint.issue_category, func.count(PainPoint.id))
-        .group_by(PainPoint.issue_category)
-        .order_by(func.count(PainPoint.id).desc())
-        .all()
-    )
+def summary(
+    candidate_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Aggregated pain point counts by category, scoped to a candidate."""
+    q = db.query(PainPoint.issue_category, func.count(PainPoint.id))
+    if candidate_id:
+        q = q.filter(PainPoint.candidate_id == candidate_id)
+    rows = q.group_by(PainPoint.issue_category).order_by(func.count(PainPoint.id).desc()).all()
     return {
         "by_category": [{"category": r[0], "count": r[1]} for r in rows],
         "total": sum(r[1] for r in rows),
@@ -35,21 +36,24 @@ def summary(db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/by-county")
-def by_county(db: Session = Depends(get_db)) -> dict:
-    """Pain point counts grouped by county."""
-    rows = (
+def by_county(
+    candidate_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+) -> list:
+    """Pain point counts grouped by county, scoped to a candidate."""
+    q = (
         db.query(PainPoint.county, func.count(PainPoint.id))
         .filter(PainPoint.county.isnot(None))
-        .group_by(PainPoint.county)
-        .order_by(func.count(PainPoint.id).desc())
-        .limit(20)
-        .all()
     )
-    return {"by_county": [{"county": r[0], "count": r[1]} for r in rows]}
+    if candidate_id:
+        q = q.filter(PainPoint.candidate_id == candidate_id)
+    rows = q.group_by(PainPoint.county).order_by(func.count(PainPoint.id).desc()).limit(20).all()
+    return [{"county": r[0], "painpoint_count": r[1]} for r in rows]
 
 
 @router.get("/")
 def list_pain_points(
+    candidate_id: str | None = Query(None),
     category: str | None = Query(None),
     county: str | None = Query(None),
     severity: str | None = Query(None),
@@ -58,6 +62,8 @@ def list_pain_points(
     db: Session = Depends(get_db),
 ) -> dict:
     q = db.query(PainPoint)
+    if candidate_id:
+        q = q.filter(PainPoint.candidate_id == candidate_id)
     if category:
         q = q.filter(PainPoint.issue_category == category)
     if county:

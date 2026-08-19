@@ -48,6 +48,7 @@ def process_pending_field_reports() -> dict:
                 top_issue=data["top_issue"],
                 support_level=data["support_level"],
                 notes=data.get("notes"),
+                candidate_id=data.get("candidate_id"),
                 latitude=data.get("latitude"),
                 longitude=data.get("longitude"),
             )

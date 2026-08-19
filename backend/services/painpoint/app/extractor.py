@@ -188,16 +188,22 @@ class PainPointExtractor:
         logger.info("Cached Tarjumi keyword enrichment for language=%s", language)
         return enriched
 
-    def extract(self, title: str, content: str, source_language: str = "en") -> ExtractionResult:
+    def extract(
+        self,
+        title: str,
+        content: str,
+        source_language: str = "en",
+        default_county: str | None = None,
+    ) -> ExtractionResult:
         text = f"{title}. {content}"
         if self._api_ready:
             try:
-                return self._extract_via_claude(text)
+                return self._extract_via_claude(text, default_county=default_county)
             except Exception as exc:
                 logger.warning("Claude extraction failed: %s — falling back to rule engine", exc)
-        return self._rule_extract(text, source_language)
+        return self._rule_extract(text, source_language, default_county=default_county)
 
-    def _extract_via_claude(self, text: str) -> ExtractionResult:
+    def _extract_via_claude(self, text: str, default_county: str | None = None) -> ExtractionResult:
         prompt = (
             "You are a Kenyan political intelligence analyst. "
             "Extract all citizen pain points from the article below.\n\n"
@@ -237,7 +243,7 @@ class PainPointExtractor:
                 description=item.get("description", ""),
                 severity=item.get("severity", "medium"),
                 location_name=item.get("location_name"),
-                county=item.get("county"),
+                county=item.get("county") or default_county,
                 constituency=item.get("constituency"),
                 politicians_mentioned=item.get("politicians_mentioned", []),
                 confidence=float(item.get("confidence", 0.8)),
@@ -245,13 +251,18 @@ class PainPointExtractor:
             ))
         return ExtractionResult(issues=issues, used_mock=False)
 
-    def _rule_extract(self, text: str, source_language: str = "en") -> ExtractionResult:
+    def _rule_extract(
+        self,
+        text: str,
+        source_language: str = "en",
+        default_county: str | None = None,
+    ) -> ExtractionResult:
         """Keyword-based fallback. Uses Tarjumi-enriched keywords for non-English articles."""
         text_lower = text.lower()
         issues: list[ExtractedIssue] = []
 
-        # Detect county
-        county = next((c for c in KENYA_COUNTIES if c.lower() in text_lower), None)
+        # Detect county from article text; fall back to candidate's county
+        county = next((c for c in KENYA_COUNTIES if c.lower() in text_lower), None) or default_county
 
         # Use language-enriched keywords if the article is in Kikuyu, Luo, Kamba etc.
         keywords_map = self._keywords_for_language(source_language)

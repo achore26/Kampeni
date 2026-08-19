@@ -15,7 +15,7 @@ def _base() -> str:
     return _settings.painpoint_service_url.rstrip("/")
 
 
-async def _proxy_get(path: str, params: dict | None = None) -> dict:
+async def _proxy_get(path: str, params: dict | None = None) -> dict | list:
     async with httpx.AsyncClient(timeout=15.0) as client:
         try:
             r = await client.get(f"{_base()}{path}", params=params)
@@ -33,7 +33,7 @@ async def painpoint_summary(user: CurrentUser, candidate_id: CandidateId) -> dic
 
 
 @router.get("/by-county")
-async def by_county(user: CurrentUser, candidate_id: CandidateId) -> dict:
+async def by_county(user: CurrentUser, candidate_id: CandidateId) -> list:
     return await _proxy_get("/painpoints/by-county", {"candidate_id": candidate_id})
 
 

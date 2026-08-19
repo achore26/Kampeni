@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints, waitlist, ai_dashboard, translate
+from .routers import auth, candidates, sentiment, opponent, briefing, health, intake, painpoints, waitlist, ai_dashboard, translate, pipeline
 
 _app_env = os.getenv("APP_ENV", "development")
 # CORS_ORIGIN supports comma-separated list, e.g. "https://kampeni.net,http://localhost:3000"
@@ -39,3 +39,4 @@ app.include_router(painpoints.router, prefix="/api/v1/painpoints", tags=["painpo
 app.include_router(waitlist.router, prefix="/api/v1/waitlist", tags=["waitlist"])
 app.include_router(ai_dashboard.router, prefix="/api/v1/ai/dashboard", tags=["ai"])
 app.include_router(translate.router, prefix="/api/v1/translate", tags=["translate"])
+app.include_router(pipeline.router, prefix="/api/v1/pipeline", tags=["pipeline"])

@@ -80,20 +80,16 @@ async def get_briefing_history(
 
 
 @router.post("/{candidate_id}/generate", status_code=status.HTTP_202_ACCEPTED)
-async def generate_briefing(candidate_id: str) -> dict:
+async def generate_briefing(candidate_id: str, db: DbSession) -> dict:
     """Trigger on-demand briefing generation for a candidate.
 
     Runs synchronously. Normal daily generation runs automatically at 5am EAT via Prefect.
     """
     import asyncio
-    from app.tasks import generate_all_briefings
+    from app.tasks import generate_for_candidate
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, generate_all_briefings)
-    return {
-        "status": "done",
-        "candidate_id": candidate_id,
-        **result,
-    }
+    result = await loop.run_in_executor(None, generate_for_candidate, candidate_id)
+    return {"status": "done", "candidate_id": candidate_id, **result}
 
 
 @router.post("/{candidate_id}/approve/{briefing_id}", response_model=BriefingOut)
